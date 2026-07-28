@@ -6,7 +6,10 @@ import 'package:ametoolbox/core/models/theme_config.dart' as app_theme;
 import 'package:ametoolbox/core/providers/input_provider.dart';
 import 'package:ametoolbox/core/providers/layout_provider.dart';
 import 'package:ametoolbox/core/providers/theme_provider.dart';
+import 'package:ametoolbox/core/theme/md3_color_scheme.dart';
 import 'package:ametoolbox/features/module_management/module_management_page.dart';
+import 'package:ametoolbox/features/settings/layout_settings_page.dart';
+import 'package:ametoolbox/features/settings/theme_settings_page.dart';
 
 /// 应用根 Widget。
 ///
@@ -23,7 +26,10 @@ class App extends ConsumerWidget {
     final brightness = themeController.config.mode == app_theme.AppThemeMode.dark
         ? Brightness.dark
         : Brightness.light;
-    final seedColor = _parseHex(themeController.config.accentColorHex);
+    final colorScheme = Md3ColorScheme.fromAccent(
+      themeController.config.accentColorHex,
+      brightness,
+    );
 
     return InputModeScope(
       mode: inputController.mode,
@@ -31,38 +37,36 @@ class App extends ConsumerWidget {
         behavior: HitTestBehavior.translucent,
         onPointerHover: inputController.onPointerEvent,
         onPointerDown: inputController.onPointerEvent,
-        child: MaterialApp(
-          title: 'AMEToolbox',
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: seedColor,
-              brightness: brightness,
-            ),
+        child: AnimatedTheme(
+          data: ThemeData(
+            colorScheme: colorScheme,
             useMaterial3: true,
           ),
-          builder: (context, child) {
-            return MediaQuery(
-              data: MediaQuery.of(context).copyWith(
-                textScaler: TextScaler.linear(
-                  layoutController.effectiveDpiScale *
-                      themeController.config.fontScale,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          child: MaterialApp(
+            title: 'AMEToolbox',
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              colorScheme: colorScheme,
+              useMaterial3: true,
+            ),
+            builder: (context, child) {
+              return MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: TextScaler.linear(
+                    layoutController.effectiveDpiScale *
+                        themeController.config.fontScale,
+                  ),
                 ),
-              ),
-              child: child!,
-            );
-          },
-          home: const _HomeShell(),
+                child: child!,
+              );
+            },
+            home: const _HomeShell(),
+          ),
         ),
       ),
     );
-  }
-
-  Color _parseHex(String hex) {
-    final buffer = StringBuffer();
-    if (hex.length == 7) buffer.write('ff');
-    buffer.write(hex.replaceFirst('#', ''));
-    return Color(int.parse(buffer.toString(), radix: 16));
   }
 }
 
@@ -78,6 +82,28 @@ class _HomeShell extends StatelessWidget {
       appBar: AppBar(
         title: const Text('主页'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.palette_outlined),
+            tooltip: '主题设置',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const ThemeSettingsPage(),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.aspect_ratio),
+            tooltip: '布局与显示',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const LayoutSettingsPage(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.grid_view),
             tooltip: '模块管理',

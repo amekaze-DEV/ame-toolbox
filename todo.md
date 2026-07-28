@@ -11,8 +11,8 @@
 |------|-----|
 | **项目名称** | AMEToolbox |
 | **当前阶段** | Phase A（底座开发） |
-| **总体进度** | 27% |
-| **已完成任务数** | 4 / 15 |
+| **总体进度** | 33% |
+| **已完成任务数** | 5 / 15 |
 | **阻塞任务数** | 0 |
 | **交互原型** | 已完成（16 页面，含 6 基础版页面） |
 | **下一里程碑** | M2 - 基础设施完成 |
@@ -71,13 +71,14 @@
   - 完成说明: 已实现LayoutController（WidgetsBindingObserver监听尺寸变化、自动/手动断点、自动/手动DPI缩放、配置持久化）、LayoutMode枚举、layout_provider、ResponsiveBuilder（300ms AnimatedSwitcher过渡）与AspectRatioHelper；DPI缩放已通过App根组件MediaQuery.textScaler注入；flutter analyze、flutter test、flutter build windows --debug均通过；lib/features/与lib/shared/无Platform.is*/dart:io引用
 
 ### TASK-04: 主题与显示设置系统
-- [ ] TASK-04: 主题与显示设置系统
+- [x] TASK-04: 主题与显示设置系统
   - 优先级: P1
   - 主导: DEV
   - 依赖: TASK-00, TASK-01
   - 预估工时: 4-6天
-  - 状态: 待开始
+  - 状态: 已完成
   - 验收标准摘要: 明亮/暗黑模式切换；6种强调色选择；DPI/字体缩放调节；配置即时生效并持久化
+  - 完成说明: 已实现Md3ColorScheme（ColorScheme.fromSeed生成完整MD3色板）、ThemeSettingsPage（主题模式卡片/强调色色块/DPI缩放区/字体大小区/实时预览区）、LayoutSettingsPage（横竖屏断点区/DPI缩放区）、Md3Slider封装；App根组件使用AnimatedTheme实现300ms主题切换过渡；主题页与布局页DPI设置通过同一LayoutController实时联动；所有配置即时持久化；flutter analyze、flutter test、flutter build windows --debug均通过；lib/features/与lib/shared/无Platform.is*/dart:io引用
 
 ### TASK-07: WebDAV数据同步
 - [ ] TASK-07: WebDAV 数据同步
@@ -188,7 +189,7 @@
   - 目标日期: 第4周
   - 验收条件: TASK-02 + TASK-03 + TASK-04 + TASK-07 完成
   - 状态: 进行中
-  - 备注: TASK-02、TASK-03 已完成，待 TASK-04/07 完成后达到
+  - 备注: TASK-02、TASK-03、TASK-04 已完成，待 TASK-07 完成后达到
 
 - [ ] **M4: ModuleContract 接口冻结**
   - 目标日期: 第4周
@@ -262,6 +263,13 @@
   - 交付物: `lib/core/layout/layout_controller.dart`、`lib/core/layout/responsive_builder.dart`、`lib/core/models/layout_mode.dart`、`lib/core/providers/layout_provider.dart`、`lib/shared/utils/aspect_ratio_helper.dart`
   - 备注: LayoutController 监听屏幕尺寸并实时判定横竖屏；自动/手动断点与 DPI 缩放；ResponsiveBuilder 提供 300ms 切换动画；DPI 通过 MediaQuery.textScaler 注入；flutter analyze / flutter test / flutter build windows --debug 均通过
 
+- [x] **TASK-04: 主题与显示设置系统**
+  - 优先级: P1
+  - 状态: 已完成
+  - 负责人: DEV
+  - 交付物: `lib/core/theme/md3_color_scheme.dart`、`lib/features/settings/theme_settings_page.dart`、`lib/features/settings/layout_settings_page.dart`、`lib/shared/widgets/md3_slider.dart`
+  - 备注: Md3ColorScheme 通过 ColorScheme.fromSeed 生成完整 MD3 色板；主题设置页含明暗/强调色/DPI/字体/预览区；布局设置页含断点/DPI 区；两页 DPI 设置实时联动；App 根组件 AnimatedTheme 实现 300ms 主题过渡；flutter analyze / flutter test / flutter build windows --debug 均通过
+
 ---
 
 ## 6. 阻塞与风险
@@ -305,3 +313,4 @@
 - **2026-07-28 更新**: 完成 TASK-02 模块管理系统实现，`flutter analyze` 与 `flutter test` 通过，ModuleContract 接口冻结待 OWNER + ARCH 审批，总体进度 20%（3/15），M3 核心能力层进入进行中
 - **2026-07-28 更新**: 完成基础版 UI 开发，在交互原型基础上新增 6 个基础版页面（home-portrait-basic、counter-basic、timer-basic、checklist-basic、settings-basic、module-management-basic），增加功能交互与组件状态，通过 `supersedesPageId` 实现版本收敛，画布总计 16 页面，validate-design-workspace --expected-pages=16 与 validate-finish-readiness --check=all 均通过
 - **2026-07-28 更新**: 完成 TASK-03 响应式布局引擎实现，`flutter analyze`、`flutter test`、`flutter build windows --debug` 均通过，UI 层约束检查通过（无 Platform.is*/dart:io 引用），总体进度 27%（4/15）
+- **2026-07-28 更新**: 完成 TASK-04 主题与显示设置系统实现，`flutter analyze`、`flutter test`、`flutter build windows --debug` 均通过，UI 层约束检查通过（无 Platform.is*/dart:io 引用），总体进度 33%（5/15），M3 核心能力层待 TASK-07 完成后达到
