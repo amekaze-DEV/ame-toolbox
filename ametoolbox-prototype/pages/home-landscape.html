@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>主页（横屏）</title>
+    <style id="theme-vars">
+/* ============================================================
+   AMEToolbox — MD3 Brand CSS
+   Seed color: #E85D04 (Safety Orange)
+   Generated via Material Design 3 ColorScheme.fromSeed()
+   ============================================================ */
+
+/* ---- Light Mode (default) ---- */
+:root,
+.light {
+  /* MD3 Primary tonal palette */
+  --ame-primary: #8F4100;
+  --ame-on-primary: #FFFFFF;
+  --ame-primary-container: #FFDCBE;
+  --ame-on-primary-container: #2E1500;
+
+  /* MD3 Secondary tonal palette */
+  --ame-secondary: #745943;
+  --ame-on-secondary: #FFFFFF;
+  --ame-secondary-container: #FFDCBE;
+  --ame-on-secondary-container: #2A1700;
+
+  /* MD3 Tertiary tonal palette */
+  --ame-tertiary: #5C6236;
+  --ame-on-tertiary: #FFFFFF;
+  --ame-tertiary-container: #E0E9AF;
+  --ame-on-tertiary-container: #1A1E00;
+
+  /* MD3 Error tonal palette */
+  --ame-error: #BA1A1A;
+  --ame-on-error: #FFFFFF;
+  --ame-error-container: #FFDAD6;
+  --ame-on-error-container: #410002;
+
+  /* MD3 Surface / Background */
+  --ame-surface: #FFF8F4;
+  --ame-on-surface: #221A14;
+  --ame-surface-variant: #F3DFD1;
+  --ame-on-surface-variant: #51443A;
+  --ame-surface-dim: #D8C8BA;
+  --ame-surface-bright: #FFF8F4;
+  --ame-surface-container-lowest: #FFFFFF;
+  --ame-surface-container-low: #FFF1E8;
+  --ame-surface-container: #FCEEE0;
+  --ame-surface-container-high: #F6E8DA;
+  --ame-surface-container-highest: #F1E2D5;
+  --ame-inverse-surface: #382F27;
+  --ame-on-inverse-surface: #FCEFE2;
+
+  /* MD3 Outline */
+  --ame-outline: #847468;
+  --ame-outline-variant: #D6C3B5;
+
+  /* Semantic state colors */
+  --state-success: #2D7D46;
+  --state-warning: #F9A825;
+  --state-error: #C62828;
+  --state-info: #1565C0;
+
+  /* Semantic aliases (required by apply-html-head-contract) */
+  --ame-background: #FFF8F4;
+  --ame-foreground: #221A14;
+  --ame-card: #FFFFFF;
+  --ame-card-foreground: #221A14;
+  --ame-popover: #FFFFFF;
+  --ame-popover-foreground: #221A14;
+  --ame-muted: #F3DFD1;
+  --ame-muted-foreground: #51443A;
+  --ame-border: #D6C3B5;
+  --ame-input: #D6C3B5;
+  --ame-ring: #8F4100;
+
+  /* Radius scale (MD3) */
+  --ame-radius-small: 4px;
+  --ame-radius-medium: 12px;
+  --ame-radius-large: 16px;
+  --ame-radius-full: 9999px;
+
+  /* Preset accent colors (for theme settings page) */
+  --preset-safety-orange: #E85D04;
+  --preset-industrial-blue: #1565C0;
+  --preset-safety-green: #2D7D46;
+  --preset-warning-red: #C62828;
+  --preset-purple: #6A1B9A;
+  --preset-yellow: #F9A825;
+
+  /* MD3 Motion tokens */
+  --ame-duration-short: 200ms;
+  --ame-duration-medium: 300ms;
+  --ame-duration-long: 450ms;
+  --ame-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ame-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ---- Dark Mode ---- */
+.dark {
+  --ame-primary: #FFB87B;
+  --ame-on-primary: #4C2700;
+  --ame-primary-container: #6B3900;
+  --ame-on-primary-container: #FFDCBE;
+
+  --ame-secondary: #E3C0A5;
+  --ame-on-secondary: #422C1A;
+  --ame-secondary-container: #5B412E;
+  --ame-on-secondary-container: #FFDCBE;
+
+  --ame-tertiary: #C4CD94;
+  --ame-on-tertiary: #2E330C;
+  --ame-tertiary-container: #444A20;
+  --ame-on-tertiary-container: #E0E9AF;
+
+  --ame-error: #FFB4AB;
+  --ame-on-error: #690005;
+  --ame-error-container: #93000A;
+  --ame-on-error-container: #FFDAD6;
+
+  --ame-surface: #1A120D;
+  --ame-on-surface: #F2DFD2;
+  --ame-surface-variant: #51443A;
+  --ame-on-surface-variant: #D6C3B5;
+  --ame-surface-dim: #1A120D;
+  --ame-surface-bright: #42342A;
+  --ame-surface-container-lowest: #140D08;
+  --ame-surface-container-low: #221A14;
+  --ame-surface-container: #271E17;
+  --ame-surface-container-high: #322821;
+  --ame-surface-container-highest: #3D332B;
+  --ame-inverse-surface: #F2DFD2;
+  --ame-on-inverse-surface: #382F27;
+
+  --ame-outline: #9F8D80;
+  --ame-outline-variant: #51443A;
+
+  --state-success: #7DD99A;
+  --state-warning: #FFD466;
+  --state-error: #FFB4AB;
+  --state-info: #8AB4F8;
+
+  --ame-background: #1A120D;
+  --ame-foreground: #F2DFD2;
+  --ame-card: #221A14;
+  --ame-card-foreground: #F2DFD2;
+  --ame-popover: #271E17;
+  --ame-popover-foreground: #F2DFD2;
+  --ame-muted: #51443A;
+  --ame-muted-foreground: #D6C3B5;
+  --ame-border: #51443A;
+  --ame-input: #51443A;
+  --ame-ring: #FFB87B;
+
+  --ame-radius-small: 4px;
+  --ame-radius-medium: 12px;
+  --ame-radius-large: 16px;
+  --ame-radius-full: 9999px;
+
+  --preset-safety-orange: #E85D04;
+  --preset-industrial-blue: #1565C0;
+  --preset-safety-green: #2D7D46;
+  --preset-warning-red: #C62828;
+  --preset-purple: #6A1B9A;
+  --preset-yellow: #F9A825;
+
+  /* MD3 Motion tokens */
+  --ame-duration-short: 200ms;
+  --ame-duration-medium: 300ms;
+  --ame-duration-long: 450ms;
+  --ame-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ame-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ============================================================
+   MD3 Typography (display/headline/title/body/label scales)
+   ============================================================ */
+
+.t-display-large { font-size: 57px; line-height: 64px; font-weight: 400; letter-spacing: -0.25px; }
+.t-display-medium { font-size: 45px; line-height: 52px; font-weight: 400; }
+.t-display-small { font-size: 36px; line-height: 44px; font-weight: 400; }
+
+.t-headline-large { font-size: 32px; line-height: 40px; font-weight: 400; }
+.t-headline-medium { font-size: 28px; line-height: 36px; font-weight: 400; }
+.t-headline-small { font-size: 24px; line-height: 32px; font-weight: 400; }
+
+.t-title-large { font-size: 22px; line-height: 28px; font-weight: 500; }
+.t-title-medium { font-size: 16px; line-height: 24px; font-weight: 500; letter-spacing: 0.15px; }
+.t-title-small { font-size: 14px; line-height: 20px; font-weight: 500; letter-spacing: 0.1px; }
+
+.t-body-large { font-size: 16px; line-height: 24px; font-weight: 400; letter-spacing: 0.5px; }
+.t-body-medium { font-size: 14px; line-height: 20px; font-weight: 400; letter-spacing: 0.25px; }
+.t-body-small { font-size: 12px; line-height: 16px; font-weight: 400; letter-spacing: 0.4px; }
+
+.t-label-large { font-size: 14px; line-height: 20px; font-weight: 500; letter-spacing: 0.1px; }
+.t-label-medium { font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: 0.5px; }
+.t-label-small { font-size: 11px; line-height: 16px; font-weight: 500; letter-spacing: 0.5px; }
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ame-background);
+    --color-foreground: var(--ame-foreground);
+    --color-card: var(--ame-card);
+    --color-card-foreground: var(--ame-card-foreground);
+    --color-popover: var(--ame-popover);
+    --color-popover-foreground: var(--ame-popover-foreground);
+    --color-primary: var(--ame-primary);
+    --color-secondary: var(--ame-secondary);
+    --color-muted: var(--ame-muted);
+    --color-muted-foreground: var(--ame-muted-foreground);
+    --color-border: var(--ame-border);
+    --color-input: var(--ame-input);
+    --color-ring: var(--ame-ring);
+    --radius-sm: var(--ame-radius-small);
+    --radius-md: var(--ame-radius-medium);
+    --radius-lg: var(--ame-radius-large);
+  }
+  @layer base {
+    body { background: var(--ame-background); color: var(--ame-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--ame-background); }
+      .text-background { color: var(--ame-background); }
+      .border-background { border-color: var(--ame-background); }
+      .ring-background { --tw-ring-color: var(--ame-background); }
+      .bg-foreground { background-color: var(--ame-foreground); }
+      .text-foreground { color: var(--ame-foreground); }
+      .border-foreground { border-color: var(--ame-foreground); }
+      .ring-foreground { --tw-ring-color: var(--ame-foreground); }
+      .bg-card { background-color: var(--ame-card); }
+      .text-card { color: var(--ame-card); }
+      .border-card { border-color: var(--ame-card); }
+      .ring-card { --tw-ring-color: var(--ame-card); }
+      .bg-card-foreground { background-color: var(--ame-card-foreground); }
+      .text-card-foreground { color: var(--ame-card-foreground); }
+      .border-card-foreground { border-color: var(--ame-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--ame-card-foreground); }
+      .bg-popover { background-color: var(--ame-popover); }
+      .text-popover { color: var(--ame-popover); }
+      .border-popover { border-color: var(--ame-popover); }
+      .ring-popover { --tw-ring-color: var(--ame-popover); }
+      .bg-popover-foreground { background-color: var(--ame-popover-foreground); }
+      .text-popover-foreground { color: var(--ame-popover-foreground); }
+      .border-popover-foreground { border-color: var(--ame-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--ame-popover-foreground); }
+      .bg-primary { background-color: var(--ame-primary); }
+      .text-primary { color: var(--ame-primary); }
+      .border-primary { border-color: var(--ame-primary); }
+      .ring-primary { --tw-ring-color: var(--ame-primary); }
+      .bg-secondary { background-color: var(--ame-secondary); }
+      .text-secondary { color: var(--ame-secondary); }
+      .border-secondary { border-color: var(--ame-secondary); }
+      .ring-secondary { --tw-ring-color: var(--ame-secondary); }
+      .bg-muted { background-color: var(--ame-muted); }
+      .text-muted { color: var(--ame-muted); }
+      .border-muted { border-color: var(--ame-muted); }
+      .ring-muted { --tw-ring-color: var(--ame-muted); }
+      .bg-muted-foreground { background-color: var(--ame-muted-foreground); }
+      .text-muted-foreground { color: var(--ame-muted-foreground); }
+      .border-muted-foreground { border-color: var(--ame-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--ame-muted-foreground); }
+      .bg-border { background-color: var(--ame-border); }
+      .text-border { color: var(--ame-border); }
+      .border-border { border-color: var(--ame-border); }
+      .ring-border { --tw-ring-color: var(--ame-border); }
+      .bg-input { background-color: var(--ame-input); }
+      .text-input { color: var(--ame-input); }
+      .border-input { border-color: var(--ame-input); }
+      .ring-input { --tw-ring-color: var(--ame-input); }
+      .bg-ring { background-color: var(--ame-ring); }
+      .text-ring { color: var(--ame-ring); }
+      .border-ring { border-color: var(--ame-ring); }
+      .ring-ring { --tw-ring-color: var(--ame-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+    <style id="critical-layout">
+      /* MD3 semantic token fallbacks (not covered by Tailwind @theme mapping) */
+      .bg-surface { background-color: var(--ame-surface); }
+      .bg-surface-container { background-color: var(--ame-surface-container); }
+      .bg-surface-container-high { background-color: var(--ame-surface-container-high); }
+      .bg-surface-container-highest { background-color: var(--ame-surface-container-highest); }
+      .bg-primary-container { background-color: var(--ame-primary-container); }
+      .bg-success-container { background-color: color-mix(in srgb, var(--state-success) 16%, transparent); }
+      .text-on-surface { color: var(--ame-on-surface); }
+      .text-on-surface-variant { color: var(--ame-on-surface-variant); }
+      .text-on-primary-container { color: var(--ame-on-primary-container); }
+      .text-success { color: var(--state-success); }
+      .border-outline-variant { border-color: var(--ame-outline-variant); }
+
+      /* MD3 State Layer — overlay tinted by currentColor */
+      .state-layer { position: relative; overflow: hidden; isolation: isolate; }
+      .state-layer::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-color: currentColor;
+        opacity: 0;
+        transition: opacity var(--ame-duration-short) var(--ame-easing-standard);
+        pointer-events: none;
+        border-radius: inherit;
+        z-index: 0;
+      }
+      .state-layer:hover::after { opacity: 0.08; }
+      .state-layer:active::after { opacity: 0.12; }
+      .state-layer:focus-visible::after { opacity: 0.12; }
+      .state-layer > * { position: relative; z-index: 1; }
+
+      /* Layout-critical selectors (static, not Tailwind-runtime-only) */
+      .ame-app-bar { position: sticky; top: 0; z-index: 10; }
+      .ame-rail-nav { height: 100vh; position: sticky; top: 0; }
+      .ame-rail-item { position: relative; }
+      .ame-rail-item[data-active="true"] { color: var(--ame-primary); }
+      .ame-rail-item[data-active="true"]::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: var(--ame-primary);
+        z-index: 2;
+      }
+      .ame-module-card { transition: background-color var(--ame-duration-short) var(--ame-easing-standard); }
+      .ame-module-card:hover { background-color: var(--ame-surface-container-highest); }
+    </style>
+</head>
+<body class="h-screen font-sans antialiased flex overflow-hidden" style="background: var(--ame-background); color: var(--ame-foreground);">
+  <!-- Rail Navigation (left) -->
+  <aside class="ame-rail-nav w-20 flex flex-col bg-surface-container border-r border-outline-variant shrink-0">
+    <div class="flex-1 overflow-y-auto no-scrollbar flex flex-col">
+      <button type="button" data-dom-id="nav-home" data-active="true" class="ame-rail-item state-layer flex flex-col items-center justify-center gap-1 h-20 text-primary">
+        <i data-lucide="home" class="w-6 h-6"></i>
+        <span class="t-label-small">主页</span>
+      </button>
+      <button type="button" data-dom-id="nav-counter" class="ame-rail-item state-layer flex flex-col items-center justify-center gap-1 h-20 text-on-surface-variant">
+        <i data-lucide="hash" class="w-6 h-6"></i>
+        <span class="t-label-small">计数器</span>
+      </button>
+      <button type="button" data-dom-id="nav-timer" class="ame-rail-item state-layer flex flex-col items-center justify-center gap-1 h-20 text-on-surface-variant">
+        <i data-lucide="timer" class="w-6 h-6"></i>
+        <span class="t-label-small">计时器</span>
+      </button>
+      <button type="button" data-dom-id="nav-checklist" class="ame-rail-item state-layer flex flex-col items-center justify-center gap-1 h-20 text-on-surface-variant">
+        <i data-lucide="check-square" class="w-6 h-6"></i>
+        <span class="t-label-small">检查表</span>
+      </button>
+    </div>
+    <button type="button" data-dom-id="cta-settings" class="ame-rail-item state-layer flex flex-col items-center justify-center gap-1 h-20 text-on-surface-variant border-t border-outline-variant">
+      <i data-lucide="settings" class="w-6 h-6"></i>
+      <span class="t-label-small">设置</span>
+    </button>
+  </aside>
+
+  <!-- Content Area (right) -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <header class="ame-app-bar flex items-center justify-between px-4 h-14 bg-surface-container text-on-surface border-b border-outline-variant">
+      <div class="flex items-center gap-2">
+        <i data-lucide="factory" class="w-6 h-6 text-primary"></i>
+        <span class="t-title-medium">工具台</span>
+      </div>
+      <button type="button" data-dom-id="cta-settings-topbar" class="state-layer p-2 rounded-full text-on-surface-variant hover:text-primary" aria-label="设置">
+        <i data-lucide="settings" class="w-5 h-5"></i>
+      </button>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-4">
+      <div class="grid grid-cols-2 gap-3">
+        <!-- Counter module card -->
+        <div class="ame-module-card state-layer bg-surface-container-high rounded-2xl p-4 flex items-center gap-4 cursor-pointer" data-dom-id="link-counter">
+          <div class="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center shrink-0">
+            <i data-lucide="hash" class="w-6 h-6 text-primary"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="t-title-medium text-on-surface">计数器</div>
+            <div class="t-body-small text-on-surface-variant">今日产线计数</div>
+          </div>
+          <div class="t-headline-small text-primary font-medium">1,248</div>
+        </div>
+
+        <!-- Timer module card -->
+        <div class="ame-module-card state-layer bg-surface-container-high rounded-2xl p-4 flex items-center gap-4 cursor-pointer" data-dom-id="link-timer">
+          <div class="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center shrink-0">
+            <i data-lucide="timer" class="w-6 h-6 text-primary"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="t-title-medium text-on-surface">计时器</div>
+            <div class="t-body-small text-on-surface-variant">当前运行中</div>
+          </div>
+          <div class="t-headline-small text-primary font-medium">02:34</div>
+        </div>
+
+        <!-- Checklist module card -->
+        <div class="ame-module-card state-layer bg-surface-container-high rounded-2xl p-4 flex items-center gap-4 cursor-pointer" data-dom-id="link-checklist">
+          <div class="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center shrink-0">
+            <i data-lucide="check-square" class="w-6 h-6 text-primary"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="t-title-medium text-on-surface">检查表</div>
+            <div class="t-body-small text-on-surface-variant">设备点检</div>
+          </div>
+          <div class="t-headline-small text-primary font-medium">3/5</div>
+        </div>
+
+        <!-- Sync status card -->
+        <div class="ame-module-card state-layer bg-surface-container-high rounded-2xl p-4 flex items-center gap-4 cursor-pointer" data-dom-id="link-sync">
+          <div class="w-12 h-12 rounded-xl bg-success-container flex items-center justify-center shrink-0">
+            <i data-lucide="refresh-cw" class="w-6 h-6 text-success"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="t-title-medium text-on-surface">数据同步</div>
+            <div class="t-body-small text-on-surface-variant">已同步</div>
+          </div>
+          <div class="t-headline-small text-success font-medium">10:42</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>

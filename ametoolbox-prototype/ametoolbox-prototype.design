@@ -1,0 +1,268 @@
+{
+  "data": [
+    {
+      "id": "page-home-portrait",
+      "title": "主页（竖屏）",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753641600000,
+      "canvasData": {
+        "x": 0,
+        "y": 0,
+        "group": 0,
+        "deviceType": "mobile"
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/home-portrait.html"
+      }
+    },
+    {
+      "id": "page-home-landscape",
+      "title": "主页（横屏）",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753641600000,
+      "canvasData": {
+        "x": 433,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/home-landscape.html"
+      }
+    },
+    {
+      "id": "page-module-management",
+      "title": "模块管理",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753641600000,
+      "canvasData": {
+        "x": 866,
+        "y": 0,
+        "group": 0,
+        "deviceType": "freeSize",
+        "windowSize": {
+          "width": 346,
+          "height": 600
+        }
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/module-management.html"
+      }
+    },
+    {
+      "id": "page-counter",
+      "title": "计数器",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753641600000,
+      "canvasData": {
+        "x": 1299,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/counter.html"
+      }
+    },
+    {
+      "id": "page-timer",
+      "title": "计时器",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753641600000,
+      "canvasData": {
+        "x": 1732,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/timer.html"
+      }
+    },
+    {
+      "id": "page-checklist",
+      "title": "检查表",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753641600000,
+      "canvasData": {
+        "x": 2165,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/checklist.html"
+      }
+    },
+    {
+      "id": "page-settings",
+      "title": "设置",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753641600000,
+      "canvasData": {
+        "x": 1008,
+        "y": 384,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/settings.html"
+      }
+    },
+    {
+      "id": "page-theme-settings",
+      "title": "主题与配色",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753641600000,
+      "canvasData": {
+        "x": 1680,
+        "y": 360,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/theme-settings.html"
+      }
+    },
+    {
+      "id": "page-layout-settings",
+      "title": "布局与显示",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753641600000,
+      "canvasData": {
+        "x": 1680,
+        "y": 564,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/layout-settings.html"
+      }
+    },
+    {
+      "id": "page-sync-settings",
+      "title": "同步设置",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1753641600000,
+      "canvasData": {
+        "x": 1692,
+        "y": 768,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/sync-settings.html"
+      }
+    },
+    {
+      "id": "page-home-portrait-basic",
+      "title": "主页（竖屏）- 基础版",
+      "type": "page",
+      "version": 2,
+      "createdAt": 1753728000000,
+      "canvasData": {
+        "x": 0,
+        "y": 440,
+        "group": 0,
+        "deviceType": "mobile"
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/home-portrait-basic.html",
+        "supersedesPageId": "page-home-portrait"
+      }
+    },
+    {
+      "id": "page-module-management-basic",
+      "title": "模块管理 - 基础版",
+      "type": "page",
+      "version": 2,
+      "createdAt": 1753728000000,
+      "canvasData": {
+        "x": 866,
+        "y": 440,
+        "group": 0,
+        "deviceType": "freeSize",
+        "windowSize": {
+          "width": 346,
+          "height": 600
+        }
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/module-management-basic.html",
+        "supersedesPageId": "page-module-management"
+      }
+    },
+    {
+      "id": "page-counter-basic",
+      "title": "计数器 - 基础版",
+      "type": "page",
+      "version": 2,
+      "createdAt": 1753728000000,
+      "canvasData": {
+        "x": 1299,
+        "y": 440,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/counter-basic.html",
+        "supersedesPageId": "page-counter"
+      }
+    },
+    {
+      "id": "page-timer-basic",
+      "title": "计时器 - 基础版",
+      "type": "page",
+      "version": 2,
+      "createdAt": 1753728000000,
+      "canvasData": {
+        "x": 1732,
+        "y": 440,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/timer-basic.html",
+        "supersedesPageId": "page-timer"
+      }
+    },
+    {
+      "id": "page-checklist-basic",
+      "title": "检查表 - 基础版",
+      "type": "page",
+      "version": 2,
+      "createdAt": 1753728000000,
+      "canvasData": {
+        "x": 2165,
+        "y": 440,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/checklist-basic.html",
+        "supersedesPageId": "page-checklist"
+      }
+    },
+    {
+      "id": "page-settings-basic",
+      "title": "设置 - 基础版",
+      "type": "page",
+      "version": 2,
+      "createdAt": 1753728000000,
+      "canvasData": {
+        "x": 1008,
+        "y": 824,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/settings-basic.html",
+        "supersedesPageId": "page-settings"
+      }
+    }
+  ],
+  "config": {
+    "autoLayout": false,
+    "deviceType": "freeSize",
+    "projectName": "AMEToolbox 交互原型",
+    "showEdge": true
+  }
+}

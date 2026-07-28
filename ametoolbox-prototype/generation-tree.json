@@ -1,0 +1,148 @@
+{
+  "root": {
+    "nodeId": "gen-project-shell",
+    "kind": "project-shell",
+    "pageIds": ["page-home-portrait","page-home-landscape","page-module-management","page-counter","page-timer","page-checklist","page-settings","page-theme-settings","page-layout-settings","page-sync-settings"],
+    "output": "partials/project-shell.html",
+    "sharedRegions": ["html-head","theme-css","tailwind-runtime","lucide-icons","semantic-token-fallback","md3-typography"],
+    "privateRegions": [],
+    "mutableSlots": ["<!-- SLOT: page-title -->","<!-- SLOT: page-body -->","<!-- SLOT: page-class -->"],
+    "status": "generated",
+    "children": [
+      {
+        "nodeId": "gen-home-nav",
+        "kind": "shared-branch",
+        "pageIds": ["page-home-portrait","page-home-landscape","page-counter","page-timer","page-checklist"],
+        "output": "partials/home-nav.html",
+        "sharedRegions": ["app-bar","bottom-navigation-bar","rail-navigation-bar","module-card-template","sync-status-card","nav-item-active-styling"],
+        "privateRegions": [],
+        "mutableSlots": ["<!-- SLOT: activeNavKey -->","<!-- SLOT: page-content -->","<!-- SLOT: layout-mode -->"],
+        "status": "generated",
+        "children": [
+          {
+            "nodeId": "page-home-portrait",
+            "kind": "page-leaf",
+            "pageIds": ["page-home-portrait"],
+            "output": "pages/home-portrait.html",
+            "sharedRegions": [],
+            "privateRegions": ["portrait-scaffold","bottom-nav","module-cards-single-column","sync-status-card"],
+            "mutableSlots": [],
+            "status": "planned",
+            "children": []
+          },
+          {
+            "nodeId": "page-home-landscape",
+            "kind": "page-leaf",
+            "pageIds": ["page-home-landscape"],
+            "output": "pages/home-landscape.html",
+            "sharedRegions": [],
+            "privateRegions": ["landscape-scaffold","rail-nav","module-cards-grid","sync-status-card","settings-entry-rail-bottom"],
+            "mutableSlots": [],
+            "status": "planned",
+            "children": []
+          },
+          {
+            "nodeId": "page-counter",
+            "kind": "page-leaf",
+            "pageIds": ["page-counter"],
+            "output": "pages/counter.html",
+            "sharedRegions": [],
+            "privateRegions": ["counter-display","increment-decrement-buttons","reset-button","target-value-setting","batch-list"],
+            "mutableSlots": [],
+            "status": "planned",
+            "children": []
+          },
+          {
+            "nodeId": "page-timer",
+            "kind": "page-leaf",
+            "pageIds": ["page-timer"],
+            "output": "pages/timer.html",
+            "sharedRegions": [],
+            "privateRegions": ["timer-display","start-pause-reset-buttons","preset-time-chips","countdown-countup-toggle"],
+            "mutableSlots": [],
+            "status": "planned",
+            "children": []
+          },
+          {
+            "nodeId": "page-checklist",
+            "kind": "page-leaf",
+            "pageIds": ["page-checklist"],
+            "output": "pages/checklist.html",
+            "sharedRegions": [],
+            "privateRegions": ["checklist-items","category-tabs","add-edit-delete-actions","checkbox-completion","progress-summary"],
+            "mutableSlots": [],
+            "status": "planned",
+            "children": []
+          }
+        ]
+      },
+      {
+        "nodeId": "gen-subpage-header",
+        "kind": "shared-branch",
+        "pageIds": ["page-module-management","page-settings","page-theme-settings","page-layout-settings","page-sync-settings"],
+        "output": "partials/subpage-header.html",
+        "sharedRegions": ["subpage-app-bar","back-button","md3-list-tile-template","md3-switch-template","md3-slider-template","section-divider"],
+        "privateRegions": [],
+        "mutableSlots": ["<!-- SLOT: subpage-title -->","<!-- SLOT: subpage-body -->"],
+        "status": "generated",
+        "children": [
+          {
+            "nodeId": "page-module-management",
+            "kind": "page-leaf",
+            "pageIds": ["page-module-management"],
+            "output": "pages/module-management.html",
+            "sharedRegions": [],
+            "privateRegions": ["module-list","module-switch-tiles","enabled-count-footer"],
+            "mutableSlots": [],
+            "status": "planned",
+            "children": []
+          },
+          {
+            "nodeId": "page-settings",
+            "kind": "page-leaf",
+            "pageIds": ["page-settings"],
+            "output": "pages/settings.html",
+            "sharedRegions": [],
+            "privateRegions": ["global-settings-section","sync-settings-section-with-toggle","module-settings-section-with-toggle","confirm-dialog"],
+            "mutableSlots": [],
+            "status": "planned",
+            "children": []
+          },
+          {
+            "nodeId": "page-theme-settings",
+            "kind": "page-leaf",
+            "pageIds": ["page-theme-settings"],
+            "output": "pages/theme-settings.html",
+            "sharedRegions": [],
+            "privateRegions": ["theme-mode-cards","accent-color-swatches","dpi-scale-section","font-size-section","live-preview-area"],
+            "mutableSlots": [],
+            "status": "planned",
+            "children": []
+          },
+          {
+            "nodeId": "page-layout-settings",
+            "kind": "page-leaf",
+            "pageIds": ["page-layout-settings"],
+            "output": "pages/layout-settings.html",
+            "sharedRegions": [],
+            "privateRegions": ["breakpoint-section","breakpoint-auto-manual-toggle","dpi-scale-section-linked"],
+            "mutableSlots": [],
+            "status": "planned",
+            "children": []
+          },
+          {
+            "nodeId": "page-sync-settings",
+            "kind": "page-leaf",
+            "pageIds": ["page-sync-settings"],
+            "output": "pages/sync-settings.html",
+            "sharedRegions": [],
+            "privateRegions": ["webdav-server-input","credential-inputs","frequency-dropdown","test-connection-button","sync-now-button","sync-status-display"],
+            "mutableSlots": [],
+            "status": "planned",
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}
