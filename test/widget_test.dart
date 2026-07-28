@@ -35,8 +35,8 @@ void main() {
       ),
     );
 
-    // Verify that the app title is shown.
-    expect(find.text('AMEToolbox'), findsOneWidget);
+    // Verify that the home page app bar title is shown.
+    expect(find.text('工具台'), findsOneWidget);
   });
 }
 

@@ -11,8 +11,8 @@
 |------|-----|
 | **项目名称** | AMEToolbox |
 | **当前阶段** | Phase A（底座开发） |
-| **总体进度** | 33% |
-| **已完成任务数** | 5 / 15 |
+| **总体进度** | 40% |
+| **已完成任务数** | 6 / 15 |
 | **阻塞任务数** | 0 |
 | **交互原型** | 已完成（16 页面，含 6 基础版页面） |
 | **下一里程碑** | M2 - 基础设施完成 |
@@ -90,13 +90,14 @@
   - 验收标准摘要: 连接测试与手动/自动同步；冲突解决（最后修改时间优先）；密码加密存储；同步状态反馈
 
 ### TASK-05: 导航与主页
-- [ ] TASK-05: 导航与主页
+- [x] TASK-05: 导航与主页
   - 优先级: P1
   - 主导: DEV
   - 依赖: TASK-01, TASK-02, TASK-03, TASK-08
   - 预估工时: 5-7天
-  - 状态: 待开始
+  - 状态: 已完成
   - 验收标准摘要: 竖屏底部导航/横屏左侧导航自适应；模块卡片展示已启用模块；导航栏滚动支持；同步状态卡片
+  - 完成说明: 已实现HomePage（ResponsiveBuilder切换竖屏底部导航/横屏左侧导航）、NavItem/navItemsProvider（第一项固定主页+已启用模块按displayOrder排列）、可滚动底部导航栏（72dp/项、水平滚动、选中项自动滚动可见）、可滚动左侧导航栏（80dp宽、垂直滚动、设置入口固定底部）、ModuleCard（含图标/名称/摘要/点击跳转）、SyncStatusCard（同步状态+时间）；横竖屏切换时选中索引保持；导航栏根据InputMode切换physics；模块启用/停用变更后卡片列表和导航栏实时更新；flutter analyze、flutter test、flutter build windows --debug均通过；lib/features/与lib/shared/无Platform.is*/dart:io引用
 
 ### TASK-06: 设置页
 - [ ] TASK-06: 设置页
@@ -200,7 +201,8 @@
 - [ ] **M5: 底座框架完成**
   - 目标日期: 第6周
   - 验收条件: TASK-05 + TASK-06 完成，底座具备完整能力
-  - 状态: 未达到
+  - 状态: 进行中
+  - 备注: TASK-05 已完成，待 TASK-06 完成后达到
 
 - [ ] **M6: 子项目全部完成**
   - 目标日期: 第9周
@@ -270,6 +272,13 @@
   - 交付物: `lib/core/theme/md3_color_scheme.dart`、`lib/features/settings/theme_settings_page.dart`、`lib/features/settings/layout_settings_page.dart`、`lib/shared/widgets/md3_slider.dart`
   - 备注: Md3ColorScheme 通过 ColorScheme.fromSeed 生成完整 MD3 色板；主题设置页含明暗/强调色/DPI/字体/预览区；布局设置页含断点/DPI 区；两页 DPI 设置实时联动；App 根组件 AnimatedTheme 实现 300ms 主题过渡；flutter analyze / flutter test / flutter build windows --debug 均通过
 
+- [x] **TASK-05: 导航与主页**
+  - 优先级: P1
+  - 状态: 已完成
+  - 负责人: DEV
+  - 交付物: `lib/features/home/home_page.dart`、`lib/features/home/nav_item.dart`、`lib/features/home/module_card_widget.dart`、`lib/features/home/sync_status_widget.dart`、`lib/shared/utils/module_icon_mapper.dart`
+  - 备注: 主页为应用默认入口；竖屏底部导航/横屏左侧导航自适应切换；导航栏可滚动且选中项自动可见；模块卡片竖屏单列/横屏双列；同步状态卡片固定底部；设置入口竖屏在AppBar/横屏在导航栏底部；flutter analyze / flutter test / flutter build windows --debug 均通过
+
 ---
 
 ## 6. 阻塞与风险
@@ -314,3 +323,4 @@
 - **2026-07-28 更新**: 完成基础版 UI 开发，在交互原型基础上新增 6 个基础版页面（home-portrait-basic、counter-basic、timer-basic、checklist-basic、settings-basic、module-management-basic），增加功能交互与组件状态，通过 `supersedesPageId` 实现版本收敛，画布总计 16 页面，validate-design-workspace --expected-pages=16 与 validate-finish-readiness --check=all 均通过
 - **2026-07-28 更新**: 完成 TASK-03 响应式布局引擎实现，`flutter analyze`、`flutter test`、`flutter build windows --debug` 均通过，UI 层约束检查通过（无 Platform.is*/dart:io 引用），总体进度 27%（4/15）
 - **2026-07-28 更新**: 完成 TASK-04 主题与显示设置系统实现，`flutter analyze`、`flutter test`、`flutter build windows --debug` 均通过，UI 层约束检查通过（无 Platform.is*/dart:io 引用），总体进度 33%（5/15），M3 核心能力层待 TASK-07 完成后达到
+- **2026-07-28 更新**: 完成 TASK-05 导航与主页实现，`flutter analyze`、`flutter test`、`flutter build windows --debug` 均通过，UI 层约束检查通过（无 Platform.is*/dart:io 引用），测试断言已同步更新，总体进度 40%（6/15），M5 底座框架完成待 TASK-06 完成后达到

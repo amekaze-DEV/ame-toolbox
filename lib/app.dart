@@ -7,9 +7,7 @@ import 'package:ametoolbox/core/providers/input_provider.dart';
 import 'package:ametoolbox/core/providers/layout_provider.dart';
 import 'package:ametoolbox/core/providers/theme_provider.dart';
 import 'package:ametoolbox/core/theme/md3_color_scheme.dart';
-import 'package:ametoolbox/features/module_management/module_management_page.dart';
-import 'package:ametoolbox/features/settings/layout_settings_page.dart';
-import 'package:ametoolbox/features/settings/theme_settings_page.dart';
+import 'package:ametoolbox/features/home/home_page.dart';
 
 /// 应用根 Widget。
 ///
@@ -62,62 +60,10 @@ class App extends ConsumerWidget {
                 child: child!,
               );
             },
-            home: const _HomeShell(),
+            home: const HomePage(),
           ),
         ),
       ),
-    );
-  }
-}
-
-/// 临时主页壳层，提供进入模块管理页面的入口。
-///
-/// TASK-05 导航与主页将替换为正式主页。
-class _HomeShell extends StatelessWidget {
-  const _HomeShell();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('主页'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.palette_outlined),
-            tooltip: '主题设置',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const ThemeSettingsPage(),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.aspect_ratio),
-            tooltip: '布局与显示',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const LayoutSettingsPage(),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.grid_view),
-            tooltip: '模块管理',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const ModuleManagementPage(),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-      body: const Center(child: Text('AMEToolbox')),
     );
   }
 }
