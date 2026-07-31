@@ -15,19 +15,11 @@ class ModuleRegistry {
 
   /// 注册所有内置模块。
   ///
-  /// 当前为三个首版模块的占位实现；子项目 SUB-01/02/03 开发完成后替换为真实模块。
+  /// 当前为五个预设子项目的占位实现；子项目开发完成后替换为真实模块。
   static List<ModuleContract> registerAll() {
-    return [
-      _PlaceholderModule(
-        definition: _toDefinition(AppConstants.defaultModules[0]),
-      ),
-      _PlaceholderModule(
-        definition: _toDefinition(AppConstants.defaultModules[1]),
-      ),
-      _PlaceholderModule(
-        definition: _toDefinition(AppConstants.defaultModules[2]),
-      ),
-    ];
+    return AppConstants.defaultModules
+        .map((module) => _PlaceholderModule(definition: _toDefinition(module)))
+        .toList();
   }
 
   static ModuleDefinition _toDefinition(
@@ -59,6 +51,9 @@ class _PlaceholderModule implements ModuleContract {
       body: Center(child: Text('${definition.name} 模块开发中')),
     );
   }
+
+  @override
+  Widget? buildSettingsPage(BuildContext context, WidgetRef ref) => null;
 
   @override
   ModuleSummary get summary => ModuleSummary(

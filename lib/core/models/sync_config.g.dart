@@ -27,13 +27,15 @@ class SyncConfigAdapter extends TypeAdapter<SyncConfig> {
       lastSyncTime: fields[5] as DateTime?,
       lastSyncStatus:
           fields[6] == null ? SyncStatus.idle : fields[6] as SyncStatus,
+      moduleSectionEnabled:
+          fields[7] == null ? true : fields[7] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, SyncConfig obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.enabled)
       ..writeByte(1)
@@ -47,7 +49,9 @@ class SyncConfigAdapter extends TypeAdapter<SyncConfig> {
       ..writeByte(5)
       ..write(obj.lastSyncTime)
       ..writeByte(6)
-      ..write(obj.lastSyncStatus);
+      ..write(obj.lastSyncStatus)
+      ..writeByte(7)
+      ..write(obj.moduleSectionEnabled);
   }
 
   @override

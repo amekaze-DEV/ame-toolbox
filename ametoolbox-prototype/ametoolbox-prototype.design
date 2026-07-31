@@ -10,7 +10,14 @@
         "x": 0,
         "y": 0,
         "group": 0,
-        "deviceType": "mobile"
+        "deviceType": "mobile",
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 375,
+          "sourceHash": "fnv1a-e477d2a5",
+          "measuredAt": 1785389632100
+        }
       },
       "devMetadata": {
         "htmlSrc": "pages/home-portrait.html"
@@ -23,9 +30,16 @@
       "version": 1,
       "createdAt": 1753641600000,
       "canvasData": {
-        "x": 433,
-        "y": 0,
-        "group": 0
+        "x": 168,
+        "y": 96,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 800,
+          "sourceHash": "fnv1a-24cab746",
+          "measuredAt": 1785389632100
+        }
       },
       "devMetadata": {
         "htmlSrc": "pages/home-landscape.html"
@@ -38,13 +52,20 @@
       "version": 1,
       "createdAt": 1753641600000,
       "canvasData": {
-        "x": 866,
-        "y": 0,
+        "x": 555.5,
+        "y": 36,
         "group": 0,
         "deviceType": "freeSize",
         "windowSize": {
           "width": 346,
           "height": 600
+        },
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 370,
+          "viewportWidth": 346,
+          "sourceHash": "fnv1a-a5dbaaf9",
+          "measuredAt": 1785389632100
         }
       },
       "devMetadata": {
@@ -58,9 +79,16 @@
       "version": 1,
       "createdAt": 1753641600000,
       "canvasData": {
-        "x": 1299,
-        "y": 0,
-        "group": 0
+        "x": 1152,
+        "y": 36,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 703,
+          "viewportWidth": 800,
+          "sourceHash": "fnv1a-ee2d0b12",
+          "measuredAt": 1785389632100
+        }
       },
       "devMetadata": {
         "htmlSrc": "pages/counter.html"
@@ -75,7 +103,14 @@
       "canvasData": {
         "x": 1732,
         "y": 0,
-        "group": 0
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 798,
+          "viewportWidth": 800,
+          "sourceHash": "fnv1a-c421f337",
+          "measuredAt": 1785389632100
+        }
       },
       "devMetadata": {
         "htmlSrc": "pages/timer.html"
@@ -90,7 +125,14 @@
       "canvasData": {
         "x": 2165,
         "y": 0,
-        "group": 0
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 600,
+          "viewportWidth": 800,
+          "sourceHash": "fnv1a-1c78c57c",
+          "measuredAt": 1785389632100
+        }
       },
       "devMetadata": {
         "htmlSrc": "pages/checklist.html"
@@ -103,9 +145,16 @@
       "version": 1,
       "createdAt": 1753641600000,
       "canvasData": {
-        "x": 1008,
-        "y": 384,
-        "group": 0
+        "x": 540,
+        "y": 420,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 726,
+          "viewportWidth": 800,
+          "sourceHash": "fnv1a-3ee461a9",
+          "measuredAt": 1785389632100
+        }
       },
       "devMetadata": {
         "htmlSrc": "pages/settings.html"
@@ -118,9 +167,21 @@
       "version": 1,
       "createdAt": 1753641600000,
       "canvasData": {
-        "x": 1680,
+        "x": 1671.5,
         "y": 360,
-        "group": 0
+        "group": 0,
+        "deviceType": "freeSize",
+        "windowSize": {
+          "width": 470,
+          "height": 600
+        },
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 884,
+          "viewportWidth": 470,
+          "sourceHash": "fnv1a-e86ff75d",
+          "measuredAt": 1785389632100
+        }
       },
       "devMetadata": {
         "htmlSrc": "pages/theme-settings.html"
@@ -133,9 +194,21 @@
       "version": 1,
       "createdAt": 1753641600000,
       "canvasData": {
-        "x": 1680,
+        "x": 1665.5,
         "y": 564,
-        "group": 0
+        "group": 0,
+        "deviceType": "freeSize",
+        "windowSize": {
+          "width": 511,
+          "height": 600
+        },
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 631,
+          "viewportWidth": 511,
+          "sourceHash": "fnv1a-088127c4",
+          "measuredAt": 1785389632100
+        }
       },
       "devMetadata": {
         "htmlSrc": "pages/layout-settings.html"
@@ -150,7 +223,14 @@
       "canvasData": {
         "x": 1692,
         "y": 768,
-        "group": 0
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 824,
+          "viewportWidth": 800,
+          "sourceHash": "fnv1a-8dce5166",
+          "measuredAt": 1785389632100
+        }
       },
       "devMetadata": {
         "htmlSrc": "pages/sync-settings.html"
@@ -166,11 +246,17 @@
         "x": 0,
         "y": 440,
         "group": 0,
-        "deviceType": "mobile"
+        "deviceType": "mobile",
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 375,
+          "sourceHash": "fnv1a-9d54a54c",
+          "measuredAt": 1785389632100
+        }
       },
       "devMetadata": {
-        "htmlSrc": "pages/home-portrait-basic.html",
-        "supersedesPageId": "page-home-portrait"
+        "htmlSrc": "pages/home-portrait-basic.html"
       }
     },
     {
@@ -180,18 +266,24 @@
       "version": 2,
       "createdAt": 1753728000000,
       "canvasData": {
-        "x": 866,
-        "y": 440,
+        "x": 433,
+        "y": 432,
         "group": 0,
         "deviceType": "freeSize",
         "windowSize": {
           "width": 346,
           "height": 600
+        },
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 655,
+          "viewportWidth": 346,
+          "sourceHash": "fnv1a-6fbd3ebf",
+          "measuredAt": 1785389632100
         }
       },
       "devMetadata": {
-        "htmlSrc": "pages/module-management-basic.html",
-        "supersedesPageId": "page-module-management"
+        "htmlSrc": "pages/module-management-basic.html"
       }
     },
     {
@@ -201,13 +293,19 @@
       "version": 2,
       "createdAt": 1753728000000,
       "canvasData": {
-        "x": 1299,
-        "y": 440,
-        "group": 0
+        "x": 1080,
+        "y": 408,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 887,
+          "viewportWidth": 800,
+          "sourceHash": "fnv1a-24ceff13",
+          "measuredAt": 1785389632100
+        }
       },
       "devMetadata": {
-        "htmlSrc": "pages/counter-basic.html",
-        "supersedesPageId": "page-counter"
+        "htmlSrc": "pages/counter-basic.html"
       }
     },
     {
@@ -217,13 +315,19 @@
       "version": 2,
       "createdAt": 1753728000000,
       "canvasData": {
-        "x": 1732,
-        "y": 440,
-        "group": 0
+        "x": 1368,
+        "y": 408,
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 810,
+          "viewportWidth": 800,
+          "sourceHash": "fnv1a-d44a4584",
+          "measuredAt": 1785389632100
+        }
       },
       "devMetadata": {
-        "htmlSrc": "pages/timer-basic.html",
-        "supersedesPageId": "page-timer"
+        "htmlSrc": "pages/timer-basic.html"
       }
     },
     {
@@ -235,11 +339,17 @@
       "canvasData": {
         "x": 2165,
         "y": 440,
-        "group": 0
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 600,
+          "viewportWidth": 800,
+          "sourceHash": "fnv1a-d749a7ba",
+          "measuredAt": 1785389632100
+        }
       },
       "devMetadata": {
-        "htmlSrc": "pages/checklist-basic.html",
-        "supersedesPageId": "page-checklist"
+        "htmlSrc": "pages/checklist-basic.html"
       }
     },
     {
@@ -251,11 +361,17 @@
       "canvasData": {
         "x": 1008,
         "y": 824,
-        "group": 0
+        "group": 0,
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 1179,
+          "viewportWidth": 800,
+          "sourceHash": "fnv1a-b12da597",
+          "measuredAt": 1785389632100
+        }
       },
       "devMetadata": {
-        "htmlSrc": "pages/settings-basic.html",
-        "supersedesPageId": "page-settings"
+        "htmlSrc": "pages/settings-basic.html"
       }
     }
   ],

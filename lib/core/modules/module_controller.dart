@@ -83,11 +83,22 @@ class ModuleController extends ChangeNotifier {
   }
 
   /// 切换指定模块的启用状态。
+  ///
+  /// 启用模块时，将其显示顺序设置为当前最大值 +1，使其默认排在最后。
   Future<void> toggleModule(String moduleId) async {
     final state = _states[moduleId];
     if (state == null) return;
 
     state.enabled = !state.enabled;
+
+    if (state.enabled) {
+      final maxOrder = _states.values
+          .where((s) => s.enabled && s.moduleId != moduleId)
+          .map((s) => s.displayOrder)
+          .fold(-1, (max, order) => order > max ? order : max);
+      state.displayOrder = maxOrder + 1;
+    }
+
     await _saveStates();
     notifyListeners();
   }
@@ -98,6 +109,29 @@ class ModuleController extends ChangeNotifier {
     if (state == null || state.displayOrder == order) return;
 
     state.displayOrder = order;
+    await _saveStates();
+    notifyListeners();
+  }
+
+  /// 按已启用模块列表中的索引重新排序。
+  ///
+  /// [oldIndex] 为拖拽起始索引，[newIndex] 为模块最终应处的目标位置索引。
+  Future<void> reorderEnabledModules(int oldIndex, int newIndex) async {
+    final enabled = enabledModules.toList();
+    if (oldIndex < 0 || oldIndex >= enabled.length) return;
+    if (newIndex < 0 || newIndex > enabled.length) return;
+    if (oldIndex == newIndex) return;
+
+    final moved = enabled.removeAt(oldIndex);
+    enabled.insert(newIndex, moved);
+
+    for (var i = 0; i < enabled.length; i++) {
+      final state = _states[enabled[i].definition.id];
+      if (state != null) {
+        state.displayOrder = i;
+      }
+    }
+
     await _saveStates();
     notifyListeners();
   }

@@ -11,11 +11,11 @@
 |------|-----|
 | **项目名称** | AMEToolbox |
 | **当前阶段** | Phase A（底座开发） |
-| **总体进度** | 40% |
-| **已完成任务数** | 6 / 15 |
+| **总体进度** | 53% |
+| **已完成任务数** | 9 / 17 |
 | **阻塞任务数** | 0 |
 | **交互原型** | 已完成（16 页面，含 6 基础版页面） |
-| **下一里程碑** | M2 - 基础设施完成 |
+| **下一里程碑** | M6 - 子项目全部完成 |
 
 ---
 
@@ -42,13 +42,14 @@
   - 完成说明: 已实现StorageService抽象接口与HiveStorage实现；首次启动自动写入默认主题/布局/同步配置及3个预设模块定义与状态；WebDAV密码与设备ID通过flutter_secure_storage加密存储；静态代码检查通过，UI层与存储层无Platform.is*/dart:io引用
 
 ### TASK-08: 输入模式适配（触控与键鼠）
-- [ ] TASK-08: 输入模式适配（触控与键鼠）
+- [x] TASK-08: 输入模式适配（触控与键鼠）
   - 优先级: P0
   - 主导: DEV
   - 依赖: TASK-00
   - 预估工时: 4-6天
-  - 状态: 待开始
+  - 状态: 已完成
   - 验收标准摘要: 触控/键鼠自动切换；AdaptiveButton/AdaptiveListTile组件完备；键盘快捷键键鼠模式可用；无Platform.is*引用
+  - 完成说明: 已对齐 InputController 到 spec（PointerDown/Hover 判定、300ms 防抖 lastSwitchTime），新增 InputDetector 统一封装 Listener + InputModeScope；创建 AdaptiveButton / AdaptiveIconButton / AdaptiveListTile / InputModeHelper；features/shared 下的 ListTile、IconButton、TextButton、FilledButton 已替换为自适应组件；KeyboardShortcuts 组件在键鼠模式下注册 Esc/Ctrl+S/Ctrl+,/Alt+Left 快捷键，触控模式下不注册；lib/features/ 与 lib/shared/ 无 Platform.is*/dart:io 引用。当前环境缺少 Flutter/Dart CLI，未执行 flutter analyze/test/build；建议人工验证或环境恢复后补跑。
 
 ### TASK-02: 模块管理系统
 - [x] TASK-02: 模块管理系统
@@ -81,13 +82,14 @@
   - 完成说明: 已实现Md3ColorScheme（ColorScheme.fromSeed生成完整MD3色板）、ThemeSettingsPage（主题模式卡片/强调色色块/DPI缩放区/字体大小区/实时预览区）、LayoutSettingsPage（横竖屏断点区/DPI缩放区）、Md3Slider封装；App根组件使用AnimatedTheme实现300ms主题切换过渡；主题页与布局页DPI设置通过同一LayoutController实时联动；所有配置即时持久化；flutter analyze、flutter test、flutter build windows --debug均通过；lib/features/与lib/shared/无Platform.is*/dart:io引用
 
 ### TASK-07: WebDAV数据同步
-- [ ] TASK-07: WebDAV 数据同步
+- [x] TASK-07: WebDAV 数据同步
   - 优先级: P1
   - 主导: DEV
   - 依赖: TASK-00, TASK-01
   - 预估工时: 5-7天
-  - 状态: 待开始
+  - 状态: 已完成
   - 验收标准摘要: 连接测试与手动/自动同步；冲突解决（最后修改时间优先）；密码加密存储；同步状态反馈
+  - 完成说明: 已实现 WebDavClient（基于 webdav_client 1.2.2 封装连接测试、JSON 上传/下载、目录创建、归档），ConflictResolver（最后修改时间优先 + 1 分钟同时修改阈值 + 旧版本归档），SyncService（自动/手动同步、Timer.periodic 定时器、启动补同步、进度与错误反馈、设备 ID 隔离路径），并更新 SyncSettingsPage（连接测试成功/失败 SnackBar、错误卡片、同步进度条、同步关闭时禁用立即同步）。WebDAV 密码继续走 flutter_secure_storage。lib/features/ 与 lib/shared/ 无 Platform.is*/dart:io 引用。当前环境缺少 Flutter/Dart 命令行工具，未执行 `flutter analyze/test/build`；建议人工验证或待环境恢复后补跑。
 
 ### TASK-05: 导航与主页
 - [x] TASK-05: 导航与主页
@@ -100,44 +102,64 @@
   - 完成说明: 已实现HomePage（ResponsiveBuilder切换竖屏底部导航/横屏左侧导航）、NavItem/navItemsProvider（第一项固定主页+已启用模块按displayOrder排列）、可滚动底部导航栏（72dp/项、水平滚动、选中项自动滚动可见）、可滚动左侧导航栏（80dp宽、垂直滚动、设置入口固定底部）、ModuleCard（含图标/名称/摘要/点击跳转）、SyncStatusCard（同步状态+时间）；横竖屏切换时选中索引保持；导航栏根据InputMode切换physics；模块启用/停用变更后卡片列表和导航栏实时更新；flutter analyze、flutter test、flutter build windows --debug均通过；lib/features/与lib/shared/无Platform.is*/dart:io引用
 
 ### TASK-06: 设置页
-- [ ] TASK-06: 设置页
+- [x] TASK-06: 设置页
   - 优先级: P2
   - 主导: DEV
-  - 依赖: TASK-01, TASK-02, TASK-04, TASK-07
+  - 依赖: TASK-01, TASK-02, TASK-04, TASK-07（UI 部分可独立实现）
   - 预估工时: 4-5天
-  - 状态: 待开始
+  - 状态: 已完成
   - 验收标准摘要: 三大分区布局（全局/同步/模块）；同步/模块总开关折叠隐藏子项；MD3分组列表视觉规范
+  - 完成说明: 已实现 SettingsPage 三大分区（全局/同步/模块），全局设置项跳转 ThemeSettingsPage/LayoutSettingsPage/FontSizeSettingsPage/AboutPage；同步设置分区总开关控制 WebDAV 子项折叠，关闭时弹出确认对话框，状态与 SyncService 绑定；模块设置分区总开关控制模块管理入口折叠，关闭时弹出确认对话框；封装 SettingsSection 与 SettingsListTile 组件统一 MD3 分组列表视觉；扩展 SyncConfig 新增 moduleSectionEnabled 字段并更新 Hive 适配器与 HiveStorage.setSyncConfig 持久化逻辑；主页设置入口已指向 SettingsPage。UI 层无 Platform.is*/dart:io 引用。
 
 ---
 
 ## 2. Phase B: 子项目并行开发
 
-### SUB-01: 计数器模块开发
-- [ ] SUB-01: 计数器模块开发
+### SUB-01: 倒班助手模块开发
+- [ ] SUB-01: 倒班助手模块开发
   - 优先级: P1
   - 主导: DEV
   - 依赖: TASK-02 (ModuleContract 冻结)
   - 预估工时: 2-3周
   - 状态: 待开始
-  - 验收标准摘要: 实现ModuleContract全部方法；计数/重置/目标值功能完整；单元测试覆盖率>=80%；集成测试通过
+  - 验收标准摘要: 实现ModuleContract全部方法；排班规则/班次提醒/工时统计功能完整；单元测试覆盖率>=80%；集成测试通过
 
-### SUB-02: 计时器模块开发
-- [ ] SUB-02: 计时器模块开发
+### SUB-02: 多功能计算器模块开发
+- [ ] SUB-02: 多功能计算器模块开发
+  - 优先级: P1
+  - 主导: DEV
+  - 依赖: TASK-02 (ModuleContract 冻结)
+  - 预估工时: 2-3周
+  - 状态: 规范已就绪，Phase 1 待开发
+  - 验收标准摘要: 实现ModuleContract全部方法；表达式计算/历史记录/常用公式功能完整；单元测试覆盖率>=80%；集成测试通过
+  - 规范文件: `modules/calculator/README.md`、`docs/calculator_spec.md`、`docs/calculator_design.md`、`docs/calculator_plan.md`、`todo.md`
+
+### SUB-03: 待办事项模块开发
+- [ ] SUB-03: 待办事项模块开发
   - 优先级: P1
   - 主导: DEV
   - 依赖: TASK-02 (ModuleContract 冻结)
   - 预估工时: 2-3周
   - 状态: 待开始
-  - 验收标准摘要: 实现ModuleContract全部方法；启动/暂停/重置/预设/正倒计时功能完整；单元测试覆盖率>=80%；集成测试通过
+  - 验收标准摘要: 实现ModuleContract全部方法；任务增删改查/到期提醒/分类筛选功能完整；单元测试覆盖率>=80%；集成测试通过
 
-### SUB-03: 检查表模块开发
-- [ ] SUB-03: 检查表模块开发
+### SUB-04: 检查表模块开发
+- [ ] SUB-04: 检查表模块开发
   - 优先级: P1
   - 主导: DEV
   - 依赖: TASK-02 (ModuleContract 冻结)
   - 预估工时: 2-3周
   - 状态: 待开始
   - 验收标准摘要: 实现ModuleContract全部方法；检查项增删改查/勾选/分类功能完整；单元测试覆盖率>=80%；集成测试通过
+
+### SUB-05: 便签模块开发
+- [ ] SUB-05: 便签模块开发
+  - 优先级: P1
+  - 主导: DEV
+  - 依赖: TASK-02 (ModuleContract 冻结)
+  - 预估工时: 2-3周
+  - 状态: 待开始
+  - 验收标准摘要: 实现ModuleContract全部方法；便签增删改查/快速记录/分类归档功能完整；单元测试覆盖率>=80%；集成测试通过
 
 ---
 
@@ -180,17 +202,17 @@
   - 状态: 已达到
   - 备注: 代码静态分析与 Windows debug 构建均已通过
 
-- [ ] **M2: 基础设施完成**
+:- [x] **M2: 基础设施完成**
   - 目标日期: 第2周
   - 验收条件: TASK-01 + TASK-08 完成，存储层与输入适配框架就绪
-  - 状态: 进行中
-  - 备注: TASK-01 已完成，待 TASK-08 完成后达到
+  - 状态: 已达到
+  - 备注: TASK-01、TASK-08 均已完成
 
-- [ ] **M3: 核心能力层完成**
+- [x] **M3: 核心能力层完成**
   - 目标日期: 第4周
   - 验收条件: TASK-02 + TASK-03 + TASK-04 + TASK-07 完成
-  - 状态: 进行中
-  - 备注: TASK-02、TASK-03、TASK-04 已完成，待 TASK-07 完成后达到
+  - 状态: 已达到
+  - 备注: TASK-02、TASK-03、TASK-04、TASK-07 均已完成
 
 - [ ] **M4: ModuleContract 接口冻结**
   - 目标日期: 第4周
@@ -198,18 +220,18 @@
   - 状态: 已达到（待人工审批）
   - 备注: TASK-02 已完成，ModuleContract 实现与 modular_tool_app_spec.md 3.9 节规格一致，等待 OWNER + ARCH 最终审批
 
-- [ ] **M5: 底座框架完成**
+- [x] **M5: 底座框架完成**
   - 目标日期: 第6周
   - 验收条件: TASK-05 + TASK-06 完成，底座具备完整能力
-  - 状态: 进行中
-  - 备注: TASK-05 已完成，待 TASK-06 完成后达到
+  - 状态: 已达到
+  - 备注: TASK-05 与 TASK-06 均已完成，底座框架具备完整能力
 
 - [ ] **M6: 子项目全部完成**
   - 目标日期: 第9周
-  - 验收条件: SUB-01 + SUB-02 + SUB-03 全部完成，集成测试通过
+  - 验收条件: SUB-01 + SUB-02 + SUB-03 + SUB-04 + SUB-05 全部完成，集成测试通过
   - 状态: 未达到
 
-- [ ] **M7: v1.0 发布**
+- [ ] **M7: v1.0 版本发布**
   - 目标日期: 第11周
   - 验收条件: 集成测试通过，全平台验证通过，发布包就绪，OWNER签署
   - 状态: 未达到
@@ -279,6 +301,28 @@
   - 交付物: `lib/features/home/home_page.dart`、`lib/features/home/nav_item.dart`、`lib/features/home/module_card_widget.dart`、`lib/features/home/sync_status_widget.dart`、`lib/shared/utils/module_icon_mapper.dart`
   - 备注: 主页为应用默认入口；竖屏底部导航/横屏左侧导航自适应切换；导航栏可滚动且选中项自动可见；模块卡片竖屏单列/横屏双列；同步状态卡片固定底部；设置入口竖屏在AppBar/横屏在导航栏底部；flutter analyze / flutter test / flutter build windows --debug 均通过
 
+- [x] **TASK-07: WebDAV 数据同步**
+  - 优先级: P1
+  - 状态: 已完成
+  - 负责人: DEV
+  - 交付物: `lib/core/sync/webdav_client.dart`、`lib/core/sync/conflict_resolver.dart`、`lib/core/sync/sync_service.dart`、`lib/features/settings/pages/sync_settings_page.dart`、`pubspec.yaml`
+  - 备注: 基于 webdav_client 1.2.2 封装 WebDAV 客户端；实现最后修改时间优先 + 旧版本归档的冲突解决；SyncService 支持手动/自动同步、Timer.periodic、启动补同步、进度与错误反馈；WebDAV 密码走 flutter_secure_storage；lib/features/ 与 lib/shared/ 无 Platform.is*/dart:io 引用；当前环境无 Flutter/Dart CLI，建议人工验证或环境恢复后补跑 flutter analyze/test/build
+
+- [x] **TASK-08: 输入模式适配（触控与键鼠）**
+  - 优先级: P0
+  - 状态: 已完成
+  - 负责人: DEV
+  - 交付物: `lib/core/input/input_controller.dart`、`lib/core/input/input_detector.dart`、`lib/core/input/keyboard_shortcuts.dart`、`lib/shared/widgets/adaptive_button.dart`、`lib/shared/widgets/adaptive_list_tile.dart`、`lib/shared/utils/input_mode_helper.dart`
+  - 备注: InputController 按 PointerDown/Hover 自动判定触控/键鼠，300ms 防抖；InputDetector 统一封装 Listener + InputModeScope；AdaptiveButton/AdaptiveIconButton/AdaptiveListTile 根据模式调整点击区域与内边距；KeyboardShortcuts 在键鼠模式下注册 Esc/Ctrl+S/Ctrl+,/Alt+Left；features/shared 下的 IconButton/TextButton/FilledButton/ListTile 已替换为自适应组件；lib/features/ 与 lib/shared/ 无 Platform.is*/dart:io 引用；当前环境无 Flutter/Dart CLI，建议人工验证或环境恢复后补跑 flutter analyze/test/build
+
+- [ ] **SUB-02: 多功能计算器模块 — 规范复核完成，启动 Phase 1 开发**
+  - 优先级: P1
+  - 状态: 规范已就绪，Phase 1 待开发
+  - 负责人: DEV
+  - 交付物: `modules/calculator/` 子项目规范文件（`README.md`、`docs/calculator_spec.md`、`docs/calculator_design.md`、`docs/calculator_plan.md`、`calculator_todo.md`）
+  - 前置条件: TASK-02 ModuleContract 已冻结；规范文件已通过主线约束复核
+  - 下一步: 按 `modules/calculator/calculator_todo.md` 完成 P1-T1 ~ P1-T8，进入 Phase 2 科学计算器开发
+
 ---
 
 ## 6. 阻塞与风险
@@ -315,8 +359,13 @@
 
 ## 更新记录
 
-- **最后更新**: 2026-07-28
-- **更新说明**: 初始化任务清单，基于 task_assignments.md 生成全部 15 个任务与 7 个里程碑
+- **最后更新**: 2026-07-31
+- **更新说明**: SUB-02 多功能计算器模块规范文件复核完成：修正 `modules/calculator/docs/calculator_spec.md` 存储 key 前缀为 `module_calculator_`；修正 `modules/calculator/docs/calculator_plan.md` 合并方式——子项目保持在 `modules/calculator/` 目录并通过 path 依赖接入主项目，单元测试覆盖率目标调整为 ≥80%；复核 `modules/calculator/docs/calculator_design.md` 并将 `unitConverterProvider` 统一为 `ChangeNotifierProvider`。子项目任务清单文件由 `todo.md` 重命名为 `calculator_todo.md`，与主线 `todo.md` 作命名区分；同步更新 `modules/calculator/README.md` 与主项目 `todo.md` 中的引用。主项目 `todo.md` 中 SUB-02 状态更新为“规范已就绪，Phase 1 待开发”，本周聚焦任务切换为 SUB-02 Phase 1 启动。
+- **2026-07-30 更新**: 准备 Flutter SDK 3.44.8 并配置国内镜像；运行 `flutter analyze lib test --no-pub` 通过（No issues found!，3.1s）。修复 3 处静态问题：module_registry.dart 补充 buildSettingsPage 实现、main.dart 移除未使用 import、local_notification_service.dart 使用 initializing formal。同步更新了 task_assignments.md Phase B 为 5 个新模块。
+- **2026-07-29 更新**: 根据产品决策更新默认模块清单为 5 个预设子项目（倒班助手、多功能计算器、待办事项、检查表、便签），同步更新模块图标映射、模块注册表与 todo.md Phase B 子项目列表；当前环境缺少 Flutter/Dart CLI，未执行 flutter analyze/test/build
+- **2026-07-29 更新**: 完成 TASK-08 输入模式适配，M2 基础设施完成已达到，总体进度 60%（9/15）
+- **2026-07-29 更新**: 完成 TASK-08 输入模式适配实现，约束合规检查通过（lib/features/ 与 lib/shared/ 无 Platform.is*/dart:io 引用，无直接使用 IconButton/TextButton/FilledButton/ListTile），当前环境缺少 Flutter/Dart CLI 未执行 flutter analyze/test/build，建议人工验证或环境恢复后补跑
+- **2026-07-29 更新**: 完成 TASK-07 WebDAV 数据同步实现，约束合规检查通过（lib/features/ 与 lib/shared/ 无 Platform.is*/dart:io 引用），当前环境缺少 Flutter/Dart CLI 未执行 flutter analyze/test/build，建议人工验证或环境恢复后补跑
 - **2026-07-28 更新**: 完成交互原型设计交付（`ametoolbox-prototype/`），覆盖 10 个页面与 36 条页面间交互，遵循 MD3 设计规范与项目约束，通过设计与就绪双重验证门
 - **2026-07-28 更新**: 完成 TASK-01 本地持久化存储层实现与静态验证，总体进度 13%（2/15），M2 基础设施完成进入进行中
 - **2026-07-28 更新**: 完成 TASK-02 模块管理系统实现，`flutter analyze` 与 `flutter test` 通过，ModuleContract 接口冻结待 OWNER + ARCH 审批，总体进度 20%（3/15），M3 核心能力层进入进行中
@@ -324,3 +373,4 @@
 - **2026-07-28 更新**: 完成 TASK-03 响应式布局引擎实现，`flutter analyze`、`flutter test`、`flutter build windows --debug` 均通过，UI 层约束检查通过（无 Platform.is*/dart:io 引用），总体进度 27%（4/15）
 - **2026-07-28 更新**: 完成 TASK-04 主题与显示设置系统实现，`flutter analyze`、`flutter test`、`flutter build windows --debug` 均通过，UI 层约束检查通过（无 Platform.is*/dart:io 引用），总体进度 33%（5/15），M3 核心能力层待 TASK-07 完成后达到
 - **2026-07-28 更新**: 完成 TASK-05 导航与主页实现，`flutter analyze`、`flutter test`、`flutter build windows --debug` 均通过，UI 层约束检查通过（无 Platform.is*/dart:io 引用），测试断言已同步更新，总体进度 40%（6/15），M5 底座框架完成待 TASK-06 完成后达到
+- **2026-07-29 更新**: 完成 TASK-06 设置页实现，静态代码检查通过（lib/features/ 与 lib/shared/ 无 Platform.is*/dart:io 引用），SyncConfig.moduleSectionEnabled 字段已持久化，M5 底座框架完成已达到，总体进度 47%（7/15）

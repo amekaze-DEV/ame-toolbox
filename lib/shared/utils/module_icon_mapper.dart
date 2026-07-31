@@ -7,9 +7,11 @@ class ModuleIconMapper {
   const ModuleIconMapper._();
 
   static final Map<String, IconData> _mapping = {
-    'counter': Icons.exposure_plus_1,
-    'timer': Icons.timer_outlined,
+    'shift': Icons.calendar_month_outlined,
+    'calculator': Icons.calculate_outlined,
+    'todo': Icons.check_circle_outline,
     'checklist': Icons.checklist_outlined,
+    'notes': Icons.sticky_note_2_outlined,
     'home': Icons.home_outlined,
     'settings': Icons.settings_outlined,
   };

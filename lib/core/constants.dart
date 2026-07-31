@@ -64,22 +64,34 @@ class AppConstants {
   static const List<({String id, String name, String description, String iconName})>
       defaultModules = [
     (
-      id: 'counter',
-      name: '计数器',
-      description: '产线计数、批次记录',
-      iconName: 'counter',
+      id: 'shift',
+      name: '倒班助手',
+      description: '排班、班次提醒与工时统计',
+      iconName: 'shift',
     ),
     (
-      id: 'timer',
-      name: '计时器',
-      description: '工序计时、节拍管控',
-      iconName: 'timer',
+      id: 'calculator',
+      name: '多功能计算器',
+      description: '表达式计算与历史记录',
+      iconName: 'calculator',
+    ),
+    (
+      id: 'todo',
+      name: '待办事项',
+      description: '任务管理与到期提醒',
+      iconName: 'todo',
     ),
     (
       id: 'checklist',
       name: '检查表',
       description: '设备点检、安全巡检',
       iconName: 'checklist',
+    ),
+    (
+      id: 'notes',
+      name: '便签',
+      description: '快速记录与便签管理',
+      iconName: 'notes',
     ),
   ];
 }

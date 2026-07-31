@@ -5,14 +5,15 @@ import 'package:ametoolbox/core/input/input_mode_scope.dart';
 import 'package:ametoolbox/core/layout/responsive_builder.dart';
 import 'package:ametoolbox/core/models/input_mode.dart';
 import 'package:ametoolbox/core/models/layout_mode.dart';
+import 'package:ametoolbox/core/models/sync_config.dart';
+import 'package:ametoolbox/core/modules/module_contract.dart';
 import 'package:ametoolbox/core/providers/layout_provider.dart';
 import 'package:ametoolbox/core/providers/module_provider.dart';
+import 'package:ametoolbox/core/providers/sync_provider.dart';
 import 'package:ametoolbox/features/home/module_card_widget.dart';
 import 'package:ametoolbox/features/home/nav_item.dart';
-import 'package:ametoolbox/features/home/sync_status_widget.dart';
-import 'package:ametoolbox/features/module_management/module_management_page.dart';
-import 'package:ametoolbox/features/settings/layout_settings_page.dart';
-import 'package:ametoolbox/features/settings/theme_settings_page.dart';
+import 'package:ametoolbox/features/settings/settings_page.dart';
+import 'package:ametoolbox/shared/widgets/adaptive_button.dart';
 
 /// 应用主页与自适应导航栏。
 ///
@@ -47,16 +48,19 @@ class _BottomNavScaffold extends ConsumerWidget {
         : null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('工具台'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: '设置',
-            onPressed: () => _openSettings(context),
-          ),
-        ],
-      ),
+      appBar: selectedModule == null
+          ? AppBar(
+              title: const Text('工具台'),
+              actions: [
+                const _SyncStatusAppBarAction(),
+                AdaptiveIconButton(
+                  icon: const Icon(Icons.settings_outlined),
+                  tooltip: '设置',
+                  onPressed: () => _openSettings(context),
+                ),
+              ],
+            )
+          : null,
       body: selectedModule != null
           ? selectedModule.buildPage(context, ref)
           : const _HomeContent(),
@@ -93,9 +97,11 @@ class _RailNavScaffold extends ConsumerWidget {
           ),
           Expanded(
             child: Scaffold(
-              appBar: AppBar(
-                title: const Text('工具台'),
-              ),
+              appBar: selectedModule == null
+                  ? AppBar(
+                      title: const Text('工具台'),
+                    )
+                  : null,
               body: selectedModule != null
                   ? selectedModule.buildPage(context, ref)
                   : const _HomeContent(),
@@ -110,65 +116,12 @@ class _RailNavScaffold extends ConsumerWidget {
 void _openSettings(BuildContext context) {
   Navigator.of(context).push(
     MaterialPageRoute<void>(
-      builder: (_) => const _SettingsPlaceholderPage(),
+      builder: (_) => const SettingsPage(),
     ),
   );
 }
 
-/// 设置占位页（TASK-06 实现正式设置页后替换）。
-class _SettingsPlaceholderPage extends StatelessWidget {
-  const _SettingsPlaceholderPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('设置')),
-      body: ListView(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.palette_outlined),
-            title: const Text('主题与配色'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const ThemeSettingsPage(),
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.aspect_ratio),
-            title: const Text('布局与显示'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const LayoutSettingsPage(),
-                ),
-              );
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.grid_view),
-            title: const Text('模块管理'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const ModuleManagementPage(),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 主页内容：模块卡片网格 + 同步状态卡片。
+/// 主页内容：支持拖拽排序的模块卡片网格。
 class _HomeContent extends ConsumerWidget {
   const _HomeContent();
 
@@ -180,58 +133,66 @@ class _HomeContent extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: CustomScrollView(
-        slivers: [
-          if (layoutMode == LayoutMode.portrait)
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  if (index == enabledModules.length) {
-                    return const Padding(
-                      padding: EdgeInsets.only(top: 8),
-                      child: SyncStatusCard(),
-                    );
-                  }
-                  final module = enabledModules[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: ModuleCard(
-                      iconName: module.definition.iconName,
-                      name: module.definition.name,
-                      summary: module.summary,
-                      onTap: () => _selectModule(ref, index + 1),
-                    ),
-                  );
-                },
-                childCount: enabledModules.length + 1,
-              ),
+      child: layoutMode == LayoutMode.portrait
+          ? ReorderableListView.builder(
+              itemCount: enabledModules.length,
+              proxyDecorator: _proxyDecorator,
+              itemBuilder: (context, index) {
+                final module = enabledModules[index];
+                return _ModuleCardListItem(
+                  key: ValueKey(module.definition.id),
+                  module: module,
+                  onTap: () => _selectModule(ref, index + 1),
+                );
+              },
+              onReorderItem: (oldIndex, newIndex) =>
+                  moduleController.reorderEnabledModules(oldIndex, newIndex),
             )
-          else
-            SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.6,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  if (index == enabledModules.length) {
-                    return const SyncStatusCard();
-                  }
-                  final module = enabledModules[index];
-                  return ModuleCard(
-                    iconName: module.definition.iconName,
-                    name: module.definition.name,
-                    summary: module.summary,
-                    onTap: () => _selectModule(ref, index + 1),
-                  );
-                },
-                childCount: enabledModules.length + 1,
-              ),
+          : CustomScrollView(
+              slivers: [
+                SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 1.6,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final module = enabledModules[index];
+                      return _DraggableModuleCard(
+                        key: ValueKey(module.definition.id),
+                        module: module,
+                        index: index,
+                        onTap: () => _selectModule(ref, index + 1),
+                      );
+                    },
+                    childCount: enabledModules.length,
+                  ),
+                ),
+              ],
             ),
-        ],
-      ),
+    );
+  }
+
+  Widget _proxyDecorator(
+    Widget child,
+    int index,
+    Animation<double> animation,
+  ) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        final elevationValue = Tween<double>(begin: 0, end: 6)
+            .animate(animation)
+            .value;
+        return Material(
+          elevation: elevationValue,
+          borderRadius: BorderRadius.circular(12),
+          child: child,
+        );
+      },
+      child: child,
     );
   }
 
@@ -240,7 +201,87 @@ class _HomeContent extends ConsumerWidget {
   }
 }
 
-/// 可水平滚动的底部导航栏。
+/// 竖屏列表中的可拖拽模块卡片项。
+class _ModuleCardListItem extends StatelessWidget {
+  const _ModuleCardListItem({
+    super.key,
+    required this.module,
+    required this.onTap,
+  });
+
+  final ModuleContract module;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: ModuleCard(
+        iconName: module.definition.iconName,
+        name: module.definition.name,
+        summary: module.summary,
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+/// 横屏网格中的可拖拽模块卡片项。
+class _DraggableModuleCard extends ConsumerWidget {
+  const _DraggableModuleCard({
+    super.key,
+    required this.module,
+    required this.index,
+    required this.onTap,
+  });
+
+  final ModuleContract module;
+  final int index;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final moduleController = ref.read(moduleControllerProvider);
+    final card = ModuleCard(
+      iconName: module.definition.iconName,
+      name: module.definition.name,
+      summary: module.summary,
+      onTap: onTap,
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Draggable<int>(
+          data: index,
+          feedback: Material(
+            elevation: 6,
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              width: constraints.maxWidth,
+              height: constraints.maxHeight,
+              child: card,
+            ),
+          ),
+          childWhenDragging: Opacity(
+            opacity: 0.3,
+            child: card,
+          ),
+          child: DragTarget<int>(
+            onWillAcceptWithDetails: (details) => details.data != index,
+            onAcceptWithDetails: (details) =>
+                moduleController.reorderEnabledModules(details.data, index),
+            builder: (context, candidateData, rejectedData) => card,
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// 自适应底部导航栏。
+///
+/// 在窄宽度/竖屏模式下自动均分每个导航项宽度，使所有标签平铺显示；
+/// 宽度充足时恢复固定 72 像素的项宽。
 class _ScrollableBottomNav extends StatefulWidget {
   const _ScrollableBottomNav({
     required this.items,
@@ -252,7 +293,8 @@ class _ScrollableBottomNav extends StatefulWidget {
   final int currentIndex;
   final ValueChanged<int> onItemSelected;
 
-  static const double itemWidth = 72;
+  static const double maxItemWidth = 72;
+  static const double minItemWidth = 56;
 
   @override
   State<_ScrollableBottomNav> createState() => _ScrollableBottomNavState();
@@ -260,6 +302,7 @@ class _ScrollableBottomNav extends StatefulWidget {
 
 class _ScrollableBottomNavState extends State<_ScrollableBottomNav> {
   final ScrollController _controller = ScrollController();
+  double _itemWidth = _ScrollableBottomNav.maxItemWidth;
 
   @override
   void didUpdateWidget(_ScrollableBottomNav oldWidget) {
@@ -279,8 +322,8 @@ class _ScrollableBottomNavState extends State<_ScrollableBottomNav> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_controller.hasClients) return;
       final viewportWidth = _controller.position.viewportDimension;
-      final itemOffset = index * _ScrollableBottomNav.itemWidth;
-      final itemEnd = itemOffset + _ScrollableBottomNav.itemWidth;
+      final itemOffset = index * _itemWidth;
+      final itemEnd = itemOffset + _itemWidth;
       final currentOffset = _controller.offset;
       final currentEnd = currentOffset + viewportWidth;
 
@@ -300,6 +343,18 @@ class _ScrollableBottomNavState extends State<_ScrollableBottomNav> {
     });
   }
 
+  double _computeItemWidth(double availableWidth) {
+    return (availableWidth / widget.items.length).clamp(
+      _ScrollableBottomNav.minItemWidth,
+      _ScrollableBottomNav.maxItemWidth,
+    );
+  }
+
+  bool _fitsWithoutScroll(double availableWidth) {
+    return availableWidth >=
+        _ScrollableBottomNav.maxItemWidth * widget.items.length;
+  }
+
   @override
   Widget build(BuildContext context) {
     final inputMode = InputModeScope.of(context);
@@ -313,22 +368,37 @@ class _ScrollableBottomNavState extends State<_ScrollableBottomNav> {
       height: 72,
       child: Material(
         color: Theme.of(context).colorScheme.surface,
-        child: SingleChildScrollView(
-          controller: _controller,
-          scrollDirection: Axis.horizontal,
-          physics: inputMode == InputMode.touch
-              ? const BouncingScrollPhysics()
-              : const ClampingScrollPhysics(),
-          child: Row(
-            children: List.generate(widget.items.length, (i) {
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final fits = _fitsWithoutScroll(constraints.maxWidth);
+            _itemWidth = fits
+                ? _ScrollableBottomNav.maxItemWidth
+                : _computeItemWidth(constraints.maxWidth);
+            final children = List.generate(widget.items.length, (i) {
               return _NavItemButton(
                 item: widget.items[i],
                 selected: i == widget.currentIndex,
-                width: _ScrollableBottomNav.itemWidth,
+                width: _itemWidth,
                 onTap: () => widget.onItemSelected(i),
               );
-            }),
-          ),
+            });
+
+            if (fits) {
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: children,
+              );
+            }
+
+            return SingleChildScrollView(
+              controller: _controller,
+              scrollDirection: Axis.horizontal,
+              physics: inputMode == InputMode.touch
+                  ? const BouncingScrollPhysics()
+                  : const ClampingScrollPhysics(),
+              child: Row(children: children),
+            );
+          },
         ),
       ),
     );
@@ -429,6 +499,13 @@ class _ScrollableRailNavState extends State<_ScrollableRailNav> {
                 ),
               ),
             ),
+            Consumer(
+              builder: (context, ref, child) {
+                final syncService = ref.watch(syncServiceProvider);
+                if (!syncService.config.enabled) return const SizedBox.shrink();
+                return const _SyncStatusRailItem();
+              },
+            ),
             const Divider(height: 1),
             _NavItemButton(
               item: const NavItem(
@@ -463,6 +540,13 @@ class _NavItemButton extends StatelessWidget {
   final double? width;
   final double? height;
 
+  double get _labelFontSize {
+    if (width == null) return 10;
+    if (width! >= 64) return 10;
+    if (width! >= 56) return 9;
+    return 8;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -472,7 +556,7 @@ class _NavItemButton extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
-        width: width,
+        width: width ?? double.infinity,
         height: height,
         decoration: BoxDecoration(
           border: Border(
@@ -495,8 +579,11 @@ class _NavItemButton extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               item.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: _labelFontSize,
                 color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
               ),
             ),
@@ -505,4 +592,81 @@ class _NavItemButton extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 竖屏标题栏中的同步状态入口。
+///
+/// WebDAV 关闭时不显示；点击可触发立即同步。
+class _SyncStatusAppBarAction extends ConsumerWidget {
+  const _SyncStatusAppBarAction();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final syncService = ref.watch(syncServiceProvider);
+    if (!syncService.config.enabled) return const SizedBox.shrink();
+
+    final (icon, color, tooltip) = _statusInfo(context, syncService.config, syncService.isSyncing);
+
+    return AdaptiveIconButton(
+      icon: Icon(icon, color: color),
+      tooltip: tooltip,
+      onPressed: syncService.isSyncing ? null : () => syncService.startSync(),
+    );
+  }
+}
+
+/// 横屏导航栏中设置按钮上方的同步状态入口。
+///
+/// WebDAV 关闭时不显示。
+class _SyncStatusRailItem extends ConsumerWidget {
+  const _SyncStatusRailItem();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final syncService = ref.watch(syncServiceProvider);
+    final (icon, color, label) = _statusInfo(context, syncService.config, syncService.isSyncing);
+
+    return InkWell(
+      onTap: syncService.isSyncing ? null : () => syncService.startSync(),
+      child: Container(
+        width: 80,
+        height: 72,
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+(IconData, Color, String) _statusInfo(
+  BuildContext context,
+  SyncConfig config,
+  bool isSyncing,
+) {
+  final colorScheme = Theme.of(context).colorScheme;
+
+  if (isSyncing) {
+    return (Icons.sync, colorScheme.primary, '同步中');
+  }
+
+  return switch (config.lastSyncStatus) {
+    SyncStatus.success => (Icons.check_circle, colorScheme.tertiary, '已同步'),
+    SyncStatus.failed => (Icons.error, colorScheme.error, '同步失败'),
+    _ => (Icons.cloud_off, colorScheme.outline, '未同步'),
+  };
 }

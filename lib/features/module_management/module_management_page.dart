@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:ametoolbox/core/models/module_definition.dart';
 import 'package:ametoolbox/core/providers/module_provider.dart';
+import 'package:ametoolbox/shared/widgets/adaptive_list_tile.dart';
 import 'package:ametoolbox/shared/widgets/md3_switch.dart';
 
 /// 模块管理页面。
@@ -86,7 +87,7 @@ class _ModuleListTile extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return ListTile(
+    return AdaptiveListTile(
       leading: Icon(
         _iconFor(definition.iconName),
         color: enabled ? colorScheme.primary : colorScheme.onSurfaceVariant,

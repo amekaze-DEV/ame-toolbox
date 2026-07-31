@@ -18,6 +18,12 @@ abstract class ModuleContract {
   /// 必须是 [ConsumerWidget]，通过 [ref] 读取底座状态。
   Widget buildPage(BuildContext context, WidgetRef ref);
 
+  /// 模块专属设置页 Widget（可选）。
+  ///
+  /// 返回 null 表示该模块没有独立设置页；返回 Widget 时，
+  /// “设置 → 模块设置”点击对应模块会进入此页面。
+  Widget? buildSettingsPage(BuildContext context, WidgetRef ref) => null;
+
   /// 主页卡片摘要数据（显示在主页模块卡片上）。
   ///
   /// 同步返回，避免异步加载导致的卡片闪烁。

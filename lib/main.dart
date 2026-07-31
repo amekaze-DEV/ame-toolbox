@@ -9,10 +9,12 @@ import 'package:ametoolbox/core/layout/layout_controller.dart';
 import 'package:ametoolbox/core/modules/module_controller.dart';
 import 'package:ametoolbox/core/modules/module_registry.dart';
 import 'package:ametoolbox/core/platform/device_info_provider_factory.dart';
+import 'package:ametoolbox/core/notifications/local_notification_service.dart';
 import 'package:ametoolbox/core/platform/platform_info_impl.dart';
 import 'package:ametoolbox/core/providers/input_provider.dart';
 import 'package:ametoolbox/core/providers/layout_provider.dart';
 import 'package:ametoolbox/core/providers/module_provider.dart';
+import 'package:ametoolbox/core/providers/notification_provider.dart';
 import 'package:ametoolbox/core/providers/platform_provider.dart';
 import 'package:ametoolbox/core/providers/storage_provider.dart';
 import 'package:ametoolbox/core/providers/sync_provider.dart';
@@ -46,7 +48,13 @@ Future<void> main() async {
     deviceInfo: deviceInfo,
   );
   final inputController = InputController(platformInfo: platformInfo);
-  final syncService = SyncService(storage: storage, deviceInfo: deviceInfo);
+  final syncService = SyncService(
+    storage: storage,
+    deviceInfo: deviceInfo,
+    registry: registry,
+  );
+  final notificationService = LocalNotificationService();
+  await notificationService.initialize();
 
   await Future.wait([
     themeController.load(),
@@ -70,6 +78,7 @@ Future<void> main() async {
         layoutControllerProvider.overrideWith((ref) => layoutController),
         inputControllerProvider.overrideWith((ref) => inputController),
         syncServiceProvider.overrideWith((ref) => syncService),
+        notificationServiceProvider.overrideWithValue(notificationService),
         moduleControllerProvider.overrideWith((ref) => moduleController),
       ],
       child: const App(),

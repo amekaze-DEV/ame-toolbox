@@ -5,13 +5,15 @@ import 'package:ametoolbox/core/constants.dart';
 import 'package:ametoolbox/core/models/layout_config.dart';
 import 'package:ametoolbox/core/models/theme_config.dart';
 import 'package:ametoolbox/core/providers/layout_provider.dart';
+import 'package:ametoolbox/core/providers/platform_provider.dart';
 import 'package:ametoolbox/core/providers/theme_provider.dart';
+import 'package:ametoolbox/shared/widgets/adaptive_button.dart';
 import 'package:ametoolbox/shared/widgets/md3_slider.dart';
 import 'package:ametoolbox/shared/widgets/md3_switch.dart';
 
-/// 主题设置页。
+/// 显示设置页。
 ///
-/// 包含明暗主题选择、强调色选择、DPI 缩放、字体大小调节与实时预览。
+/// 包含明暗主题选择、强调色选择、横竖屏断点、DPI 缩放、字体大小调节与实时预览。
 class ThemeSettingsPage extends ConsumerWidget {
   const ThemeSettingsPage({super.key});
 
@@ -19,11 +21,12 @@ class ThemeSettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeController = ref.watch(themeControllerProvider);
     final layoutController = ref.watch(layoutControllerProvider);
+    final platformInfo = ref.watch(platformInfoProvider);
     final theme = themeController.config;
     final layout = layoutController.config;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('主题与显示')),
+      appBar: AppBar(title: const Text('显示')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -33,11 +36,86 @@ class ThemeSettingsPage extends ConsumerWidget {
             const SizedBox(height: 16),
             _AccentColorCard(theme: theme),
             const SizedBox(height: 16),
+            _BreakpointSection(
+              layout: layout,
+              effectiveBreakpoint: layoutController.effectiveBreakpoint,
+              deviceTypeLabel: _deviceTypeLabel(platformInfo, layoutController),
+            ),
+            const SizedBox(height: 16),
             _DpiSection(layout: layout, effectiveDpi: layoutController.effectiveDpiScale),
             const SizedBox(height: 16),
             _FontScaleSection(theme: theme),
             const SizedBox(height: 16),
-            _PreviewCard(),
+            const _PreviewCard(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _deviceTypeLabel(dynamic platformInfo, dynamic layoutController) {
+    if (platformInfo.isDesktop) return '桌面';
+    final shortSide = layoutController.screenSize.shortestSide;
+    if (shortSide < AppConstants.phoneMaxShortSide) return '手机';
+    if (shortSide < AppConstants.tabletMaxShortSide) return '平板';
+    return '桌面';
+  }
+}
+
+class _BreakpointSection extends ConsumerWidget {
+  const _BreakpointSection({
+    required this.layout,
+    required this.effectiveBreakpoint,
+    required this.deviceTypeLabel,
+  });
+
+  final LayoutConfig layout;
+  final double effectiveBreakpoint;
+  final String deviceTypeLabel;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.read(layoutControllerProvider);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text('横竖屏断点', style: Theme.of(context).textTheme.titleMedium),
+                const Spacer(),
+                Text(layout.autoBreakpoint ? '自动' : '手动'),
+                Md3Switch(
+                  value: layout.autoBreakpoint,
+                  onChanged: (value) => controller.setAutoBreakpoint(value),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (layout.autoBreakpoint)
+              Text('自动 · $deviceTypeLabel · ${effectiveBreakpoint.toStringAsFixed(2)}')
+            else
+              Column(
+                children: [
+                  Text(layout.breakpoint.toStringAsFixed(2)),
+                  Md3Slider(
+                    value: layout.breakpoint,
+                    min: AppConstants.minBreakpoint,
+                    max: AppConstants.maxBreakpoint,
+                    divisions: ((AppConstants.maxBreakpoint - AppConstants.minBreakpoint) / AppConstants.breakpointStep).round(),
+                    label: layout.breakpoint.toStringAsFixed(2),
+                    onChanged: (value) => controller.setBreakpoint(value),
+                  ),
+                ],
+              ),
+            const SizedBox(height: 4),
+            Text(
+              '宽高比 ≥ 断点值时切换为横屏布局',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ],
         ),
       ),
@@ -329,9 +407,9 @@ class _PreviewCard extends StatelessWidget {
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 12),
-            FilledButton(
+            AdaptiveButton(
               onPressed: () {},
-              child: const Text('主按钮'),
+              label: '主按钮',
             ),
             const SizedBox(height: 8),
             Row(

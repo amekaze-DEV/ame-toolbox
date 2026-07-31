@@ -176,6 +176,7 @@ class HiveStorage implements StorageService {
       frequency: config.frequency,
       lastSyncTime: config.lastSyncTime,
       lastSyncStatus: config.lastSyncStatus,
+      moduleSectionEnabled: config.moduleSectionEnabled,
     );
     await _syncBox.put(_configKey, configToStore);
   }

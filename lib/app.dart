@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:ametoolbox/core/input/input_mode_scope.dart';
+import 'package:ametoolbox/core/input/input_detector.dart';
+import 'package:ametoolbox/core/input/keyboard_shortcuts.dart';
 import 'package:ametoolbox/core/models/theme_config.dart' as app_theme;
 import 'package:ametoolbox/core/providers/input_provider.dart';
 import 'package:ametoolbox/core/providers/layout_provider.dart';
@@ -29,39 +30,34 @@ class App extends ConsumerWidget {
       brightness,
     );
 
-    return InputModeScope(
-      mode: inputController.mode,
-      child: Listener(
-        behavior: HitTestBehavior.translucent,
-        onPointerHover: inputController.onPointerEvent,
-        onPointerDown: inputController.onPointerEvent,
-        child: AnimatedTheme(
-          data: ThemeData(
+    return InputDetector(
+      controller: inputController,
+      child: AnimatedTheme(
+        data: ThemeData(
+          colorScheme: colorScheme,
+          useMaterial3: true,
+        ),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        child: MaterialApp(
+          title: 'AMEToolbox',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
             colorScheme: colorScheme,
             useMaterial3: true,
           ),
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          child: MaterialApp(
-            title: 'AMEToolbox',
-            debugShowCheckedModeBanner: false,
-            theme: ThemeData(
-              colorScheme: colorScheme,
-              useMaterial3: true,
-            ),
-            builder: (context, child) {
-              return MediaQuery(
-                data: MediaQuery.of(context).copyWith(
-                  textScaler: TextScaler.linear(
-                    layoutController.effectiveDpiScale *
-                        themeController.config.fontScale,
-                  ),
+          builder: (context, child) {
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: TextScaler.linear(
+                  layoutController.effectiveDpiScale *
+                      themeController.config.fontScale,
                 ),
-                child: child!,
-              );
-            },
-            home: const HomePage(),
-          ),
+              ),
+              child: KeyboardShortcuts(child: child!),
+            );
+          },
+          home: const HomePage(),
         ),
       ),
     );

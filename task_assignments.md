@@ -27,9 +27,11 @@
 
 | 任务ID | 任务名称 | 优先级 | 复杂度 | 预估工时 | 主导角色 | 依赖 |
 |--------|---------|--------|--------|---------|---------|------|
-| SUB-01 | 计数器模块开发 | P1 | 中 | 2-3周 | DEV | TASK-02 (ModuleContract 冻结) |
-| SUB-02 | 计时器模块开发 | P1 | 中 | 2-3周 | DEV | TASK-02 (ModuleContract 冻结) |
-| SUB-03 | 检查表模块开发 | P1 | 中 | 2-3周 | DEV | TASK-02 (ModuleContract 冻结) |
+| SUB-01 | 倒班助手模块开发 | P1 | 中 | 2-3周 | DEV | TASK-02 (ModuleContract 冻结) |
+| SUB-02 | 多功能计算器模块开发 | P1 | 中 | 2-3周 | DEV | TASK-02 (ModuleContract 冻结) |
+| SUB-03 | 待办事项模块开发 | P1 | 中 | 2-3周 | DEV | TASK-02 (ModuleContract 冻结) |
+| SUB-04 | 检查表模块开发 | P1 | 中 | 2-3周 | DEV | TASK-02 (ModuleContract 冻结) |
+| SUB-05 | 便签模块开发 | P1 | 中 | 2-3周 | DEV | TASK-02 (ModuleContract 冻结) |
 
 ### 1.3 集成与发布任务
 
@@ -262,7 +264,7 @@
 4. **需要对齐的任务**：
    - TASK-05：导航栏和主页依赖模块注册表获取模块列表
    - TASK-06：设置页的模块设置分区依赖模块注册表
-   - SUB-01/02/03：子项目依赖冻结后的 `ModuleContract`
+   - SUB-01~SUB-05：子项目依赖冻结后的 `ModuleContract`
 
 ---
 
@@ -590,7 +592,7 @@
    - TASK-00：依赖 `DeviceInfoProvider.deviceId` 获取设备标识
    - TASK-01：依赖 `StorageService` 读取/写入数据
    - TASK-06：同步设置页依赖此任务的 WebDAV 配置能力
-   - SUB-01/02/03：子项目需实现 `exportData`/`importData` 方法
+   - SUB-01~SUB-05：子项目需实现 `exportData`/`importData` 方法
 
 ---
 
@@ -663,7 +665,7 @@
 
 ## 4. 子项目任务
 
-### SUB-01: 计数器模块开发
+### SUB-01: 倒班助手模块开发
 
 **基本信息**
 | 属性 | 值 |
@@ -677,36 +679,39 @@
 
 **概述**
 
-实现计数器模块，满足产线计数、批次记录等场景需求。作为子项目，通过实现 `ModuleContract` 接口接入主项目，遵守底座所有约束。
+实现倒班助手模块，满足工厂轮班排班、班次提醒与工时统计等场景需求。作为子项目，通过实现 `ModuleContract` 接口接入主项目，遵守底座所有约束。该模块为首批需要使用系统级通知提醒的模块之一。
 
 **验收标准**
-- [ ] 实现 `CounterModule` 类，实现 `ModuleContract` 全部方法
-- [ ] 计数器主页 (`ConsumerWidget`) 功能完整，可正常计数、重置、设置目标值
+- [ ] 实现 `ShiftModule` 类，实现 `ModuleContract` 全部方法
+- [ ] 倒班助手主页 (`ConsumerWidget`) 功能完整，支持排班规则配置、班次日历、下次班次提醒
+- [ ] 班次提醒通过 `NotificationService` 调度系统级通知
 - [ ] 模块通过约束检查清单（技术栈、UI 规范、状态管理、平台抽象、输入适配、主题、布局、存储、同步、图标、依赖）
 - [ ] 单元测试通过，覆盖率 >= 80%
-- [ ] 集成测试通过：导航栏显示、主页卡片摘要、主题适配、布局适配、输入适配、数据同步
+- [ ] 集成测试通过：导航栏显示、主页卡片摘要、主题适配、布局适配、输入适配、数据同步、通知提醒
 
 **涉及文件**
-- `modules/counter/lib/counter_module.dart`
-- `modules/counter/lib/counter_page.dart`
-- `modules/counter/lib/counter_store.dart`
-- `modules/counter/lib/widgets/`
-- `modules/counter/test/counter_test.dart`
-- `modules/counter/README.md`
+- `modules/shift/lib/shift_module.dart`
+- `modules/shift/lib/shift_page.dart`
+- `modules/shift/lib/shift_store.dart`
+- `modules/shift/lib/widgets/`
+- `modules/shift/test/shift_test.dart`
+- `modules/shift/README.md`
 
 **执行说明**
 1. **DEV 主导工作**：
    - 按照 Step 1-5 流程开发（需求编写 → 接口对齐 → 独立开发 → 集成测试 → 验收发布）
-   - 编写 `modules/counter/README.md` 需求文档
-   - 实现 `CounterModule` 入口类
-   - 实现计数器页面的 UI 和业务逻辑
+   - 编写 `modules/shift/README.md` 需求文档
+   - 实现 `ShiftModule` 入口类
+   - 实现倒班助手页面的 UI 和业务逻辑
+   - 通过 `notificationServiceProvider` 调用 `NotificationService.schedule` 实现班次提醒
    - 实现 `exportData`/`importData` 方法
    - 编写单元测试
    - 完成模块 UI/UX 设计落地
 
 2. **ARCH 配合工作**：
-   - 审查 `CounterModule` 的实现方案
-   - 确认数据存储 key 命名空间 (`module_counter_*`)
+   - 审查 `ShiftModule` 的实现方案
+   - 确认数据存储 key 命名空间 (`module_shift_*`)
+   - 确认通知使用规范与提醒触发条件
 
 3. **QA 配合工作**：
    - 编写集成测试用例
@@ -719,7 +724,7 @@
 
 ---
 
-### SUB-02: 计时器模块开发
+### SUB-02: 多功能计算器模块开发
 
 **基本信息**
 | 属性 | 值 |
@@ -733,36 +738,36 @@
 
 **概述**
 
-实现计时器模块，满足工序计时、节拍管控等场景需求。作为子项目，通过实现 `ModuleContract` 接口接入主项目，遵守底座所有约束。
+实现多功能计算器模块，满足表达式计算、历史记录与常用公式等场景需求。作为子项目，通过实现 `ModuleContract` 接口接入主项目，遵守底座所有约束。
 
 **验收标准**
-- [ ] 实现 `TimerModule` 类，实现 `ModuleContract` 全部方法
-- [ ] 计时器主页功能完整，支持启动/暂停/重置、预设时间、倒计时/正计时
+- [ ] 实现 `CalculatorModule` 类，实现 `ModuleContract` 全部方法
+- [ ] 计算器主页功能完整，支持表达式输入、计算结果、历史记录、常用公式
 - [ ] 模块通过约束检查清单
 - [ ] 单元测试通过，覆盖率 >= 80%
 - [ ] 集成测试通过
 
 **涉及文件**
-- `modules/timer/lib/timer_module.dart`
-- `modules/timer/lib/timer_page.dart`
-- `modules/timer/lib/timer_store.dart`
-- `modules/timer/lib/widgets/`
-- `modules/timer/test/timer_test.dart`
-- `modules/timer/README.md`
+- `modules/calculator/lib/calculator_module.dart`
+- `modules/calculator/lib/calculator_page.dart`
+- `modules/calculator/lib/calculator_store.dart`
+- `modules/calculator/lib/widgets/`
+- `modules/calculator/test/calculator_test.dart`
+- `modules/calculator/README.md`
 
 **执行说明**
 1. **DEV 主导工作**：
    - 按照 Step 1-5 流程开发
-   - 编写 `modules/timer/README.md` 需求文档
-   - 实现 `TimerModule` 入口类
-   - 实现计时器页面的 UI 和业务逻辑
+   - 编写 `modules/calculator/README.md` 需求文档
+   - 实现 `CalculatorModule` 入口类
+   - 实现计算器页面的 UI 和业务逻辑
    - 实现 `exportData`/`importData` 方法
    - 编写单元测试
    - 完成模块 UI/UX 设计落地
 
 2. **ARCH 配合工作**：
-   - 审查 `TimerModule` 的实现方案
-   - 确认数据存储 key 命名空间 (`module_timer_*`)
+   - 审查 `CalculatorModule` 的实现方案
+   - 确认数据存储 key 命名空间 (`module_calculator_*`)
 
 3. **QA 配合工作**：
    - 编写集成测试用例
@@ -770,7 +775,61 @@
 
 ---
 
-### SUB-03: 检查表模块开发
+### SUB-03: 待办事项模块开发
+
+**基本信息**
+| 属性 | 值 |
+|------|-----|
+| 优先级 | P1 |
+| 复杂度 | 中 |
+| 预估工时 | 2-3周 |
+| 主导角色 | DEV |
+| 配合角色 | ARCH, QA |
+| 依赖 | TASK-02 (ModuleContract 冻结后) |
+
+**概述**
+
+实现待办事项模块，满足任务管理、到期提醒与分类筛选等场景需求。作为子项目，通过实现 `ModuleContract` 接口接入主项目，遵守底座所有约束。该模块为首批需要使用系统级通知提醒的模块之一。
+
+**验收标准**
+- [ ] 实现 `TodoModule` 类，实现 `ModuleContract` 全部方法
+- [ ] 待办事项主页功能完整，支持任务增删改查、到期时间设置、完成状态切换、分类筛选
+- [ ] 到期提醒通过 `NotificationService` 调度系统级通知
+- [ ] 模块通过约束检查清单
+- [ ] 单元测试通过，覆盖率 >= 80%
+- [ ] 集成测试通过
+
+**涉及文件**
+- `modules/todo/lib/todo_module.dart`
+- `modules/todo/lib/todo_page.dart`
+- `modules/todo/lib/todo_store.dart`
+- `modules/todo/lib/widgets/`
+- `modules/todo/test/todo_test.dart`
+- `modules/todo/README.md`
+
+**执行说明**
+1. **DEV 主导工作**：
+   - 按照 Step 1-5 流程开发
+   - 编写 `modules/todo/README.md` 需求文档
+   - 实现 `TodoModule` 入口类
+   - 实现待办事项页面的 UI 和业务逻辑
+   - 通过 `notificationServiceProvider` 调用 `NotificationService.schedule` 实现到期提醒
+   - 实现 `exportData`/`importData` 方法
+   - 编写单元测试
+   - 完成模块 UI/UX 设计落地
+
+2. **ARCH 配合工作**：
+   - 审查 `TodoModule` 的实现方案
+   - 确认数据存储 key 命名空间 (`module_todo_*`)
+   - 确认通知使用规范与提醒触发条件
+
+3. **QA 配合工作**：
+   - 编写集成测试用例
+   - 执行验收测试
+
+---
+
+### SUB-04: 检查表模块开发
 
 **基本信息**
 | 属性 | 值 |
@@ -821,6 +880,57 @@
 
 ---
 
+### SUB-05: 便签模块开发
+
+**基本信息**
+| 属性 | 值 |
+|------|-----|
+| 优先级 | P1 |
+| 复杂度 | 中 |
+| 预估工时 | 2-3周 |
+| 主导角色 | DEV |
+| 配合角色 | ARCH, QA |
+| 依赖 | TASK-02 (ModuleContract 冻结后) |
+
+**概述**
+
+实现便签模块，满足快速记录、便签管理与分类归档等场景需求。作为子项目，通过实现 `ModuleContract` 接口接入主项目，遵守底座所有约束。
+
+**验收标准**
+- [ ] 实现 `NotesModule` 类，实现 `ModuleContract` 全部方法
+- [ ] 便签主页功能完整，支持便签增删改查、快速记录、分类归档、搜索
+- [ ] 模块通过约束检查清单
+- [ ] 单元测试通过，覆盖率 >= 80%
+- [ ] 集成测试通过
+
+**涉及文件**
+- `modules/notes/lib/notes_module.dart`
+- `modules/notes/lib/notes_page.dart`
+- `modules/notes/lib/notes_store.dart`
+- `modules/notes/lib/widgets/`
+- `modules/notes/test/notes_test.dart`
+- `modules/notes/README.md`
+
+**执行说明**
+1. **DEV 主导工作**：
+   - 按照 Step 1-5 流程开发
+   - 编写 `modules/notes/README.md` 需求文档
+   - 实现 `NotesModule` 入口类
+   - 实现便签页面的 UI 和业务逻辑
+   - 实现 `exportData`/`importData` 方法
+   - 编写单元测试
+   - 完成模块 UI/UX 设计落地
+
+2. **ARCH 配合工作**：
+   - 审查 `NotesModule` 的实现方案
+   - 确认数据存储 key 命名空间 (`module_notes_*`)
+
+3. **QA 配合工作**：
+   - 编写集成测试用例
+   - 执行验收测试
+
+---
+
 ## 5. 任务依赖与执行顺序
 
 ### 5.1 依赖图
@@ -836,9 +946,11 @@ flowchart TD
     T06[TASK-06: 设置页]
     T07[TASK-07: WebDAV 数据同步]
     T08[TASK-08: 输入模式适配]
-    S01[SUB-01: 计数器模块]
-    S02[SUB-02: 计时器模块]
-    S03[SUB-03: 检查表模块]
+    S01[SUB-01: 倒班助手模块]
+    S02[SUB-02: 多功能计算器模块]
+    S03[SUB-03: 待办事项模块]
+    S04[SUB-04: 检查表模块]
+    S05[SUB-05: 便签模块]
     I01[INT-01: 集成测试]
     I03[INT-03: v1.0 版本发布]
 
@@ -857,11 +969,15 @@ flowchart TD
     T02 --> S01
     T02 --> S02
     T02 --> S03
+    T02 --> S04
+    T02 --> S05
     T05 --> I01
     T06 --> I01
     S01 --> I01
     S02 --> I01
     S03 --> I01
+    S04 --> I01
+    S05 --> I01
     I01 --> I03
 
     subgraph PhaseA["Phase A: 基础设施"]
@@ -892,6 +1008,8 @@ flowchart TD
         S01
         S02
         S03
+        S04
+        S05
     end
 
     subgraph PhaseG["Phase G: 集成验收与发布"]
@@ -908,7 +1026,7 @@ flowchart TD
 | 组 B | TASK-02 + TASK-03 + TASK-04 + TASK-07 | TASK-00 + TASK-01 完成 | 四个任务互相无依赖，可大规模并行 |
 | 组 C | TASK-05 | TASK-01 + TASK-02 + TASK-03 + TASK-08 | 导航与主页依赖多个前置任务，需等待组 B 核心任务完成 |
 | 组 D | TASK-06 | TASK-01 + TASK-02 + TASK-04 + TASK-07 | 设置页为最后开发的底座任务，依赖最广泛 |
-| 组 E | SUB-01 + SUB-02 + SUB-03 | TASK-02 (ModuleContract 冻结) | 三个子项目互相无依赖，可分配给不同 DEV Agent 并行开发 |
+| 组 E | SUB-01 + SUB-02 + SUB-03 + SUB-04 + SUB-05 | TASK-02 (ModuleContract 冻结) | 五个子项目互相无依赖，可分配给不同 DEV Agent 并行开发 |
 
 ### 5.3 推荐开发顺序
 
@@ -920,7 +1038,7 @@ flowchart TD
 | Phase 4 | 第4周 | TASK-02 | DEV + ARCH | 模块管理 + 契约接口冻结（里程碑，OWNER 审批） |
 | Phase 5 | 第5周 | TASK-05 | DEV | 导航与主页 |
 | Phase 6 | 第6周 | TASK-06 | DEV | 设置页 → Phase A 完成 |
-| Phase 7 | 第6-9周 | SUB-01 + SUB-02 + SUB-03 (并行) | DEV | 各模块独立开发（Phase 4 后可开始需求编写） |
+| Phase 7 | 第6-9周 | SUB-01 + SUB-02 + SUB-03 + SUB-04 + SUB-05 (并行) | DEV | 各模块独立开发（Phase 4 后可开始需求编写） |
 | Phase 8 | 第10周 | INT-01 | QA | 集成测试、全平台验证 |
 | Phase 9 | 第10-11周 | INT-03 | OPS | v1.0 正式发布（OWNER 签署验收） |
 
@@ -939,9 +1057,11 @@ flowchart TD
 | **TASK-06** 设置页 | A | C | **R** | I | -- |
 | **TASK-07** WebDAV 同步 | A | C | **R** | C | -- |
 | **TASK-08** 输入适配 | A | C | **R** | I | -- |
-| **SUB-01** 计数器模块 | A | C | **R** | C | I |
-| **SUB-02** 计时器模块 | A | C | **R** | C | I |
-| **SUB-03** 检查表模块 | A | C | **R** | C | I |
+| **SUB-01** 倒班助手模块 | A | C | **R** | C | I |
+| **SUB-02** 多功能计算器模块 | A | C | **R** | C | I |
+| **SUB-03** 待办事项模块 | A | C | **R** | C | I |
+| **SUB-04** 检查表模块 | A | C | **R** | C | I |
+| **SUB-05** 便签模块 | A | C | **R** | C | I |
 | **INT-01** 集成测试 | A | C | C | **R** | I |
 | **INT-02** CI/CD 流水线 | A | C | I | I | **R** |
 | **INT-03** 版本发布 v1.0 | **A** | C | C | C | R |
@@ -963,9 +1083,11 @@ flowchart TD
 | 设置页 | TASK-06 | 三大分区布局，同步/模块总开关折叠，子页面配置实时同步，MD3 交互规范 | OWNER |
 | WebDAV 同步系统 | TASK-07 | 连接测试、手动/自动同步、冲突解决、密码加密、状态反馈 | ARCH + QA |
 | 输入适配系统 | TASK-08 | 触控/键鼠自动切换，自适应组件完备，键盘快捷键键鼠模式可用，无 Platform.is* 引用 | ARCH |
-| 计数器模块 | SUB-01 | 实现 ModuleContract，功能完整，集成测试通过，约束检查清单全部通过 | OWNER + QA |
-| 计时器模块 | SUB-02 | 实现 ModuleContract，功能完整，集成测试通过，约束检查清单全部通过 | OWNER + QA |
-| 检查表模块 | SUB-03 | 实现 ModuleContract，功能完整，集成测试通过，约束检查清单全部通过 | OWNER + QA |
+| 倒班助手模块 | SUB-01 | 实现 ModuleContract，排班/提醒/工时统计功能完整，集成测试通过，约束检查清单全部通过 | OWNER + QA |
+| 多功能计算器模块 | SUB-02 | 实现 ModuleContract，表达式计算/历史记录功能完整，集成测试通过，约束检查清单全部通过 | OWNER + QA |
+| 待办事项模块 | SUB-03 | 实现 ModuleContract，任务管理/到期提醒功能完整，集成测试通过，约束检查清单全部通过 | OWNER + QA |
+| 检查表模块 | SUB-04 | 实现 ModuleContract，检查项管理功能完整，集成测试通过，约束检查清单全部通过 | OWNER + QA |
+| 便签模块 | SUB-05 | 实现 ModuleContract，快速记录/分类归档功能完整，集成测试通过，约束检查清单全部通过 | OWNER + QA |
 | CI/CD 流水线 | INT-02 | 自动构建、静态分析、单元测试、打包发布全流程自动化 | OWNER + ARCH |
 | v1.0 发布包 | INT-03 | Windows 平台可运行安装包，全部验收测试通过，版本号正确 | OWNER |
 
@@ -980,7 +1102,7 @@ flowchart TD
 | M3: 契约接口冻结 | Phase C | TASK-02 完成，ModuleContract 冻结 | OWNER + ARCH | 第4周末 |
 | M4: 导航框架可用 | Phase D | TASK-05 完成 | OWNER | 第5周末 |
 | M5: 底座开发完成 | Phase E | TASK-06 完成，底座具备完整能力 | OWNER | 第6周末 |
-| M6: 模块开发完成 | Phase F | 三个子项目全部完成 | OWNER + QA | 第9周末 |
+| M6: 模块开发完成 | Phase F | 五个子项目全部完成 | OWNER + QA | 第9周末 |
 | M7: v1.0 正式发布 | Phase G | 集成测试通过，全平台验证通过，发布包就绪 | OWNER | 第11周末 |
 
 ## 附录 B: 风险提示

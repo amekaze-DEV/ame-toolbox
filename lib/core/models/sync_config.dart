@@ -45,6 +45,7 @@ class SyncConfig {
     this.frequency = SyncFrequency.fiveMin,
     this.lastSyncTime,
     this.lastSyncStatus = SyncStatus.idle,
+    this.moduleSectionEnabled = true,
   });
 
   @HiveField(0, defaultValue: false)
@@ -67,4 +68,32 @@ class SyncConfig {
 
   @HiveField(6, defaultValue: SyncStatus.idle)
   SyncStatus lastSyncStatus;
+
+  /// 模块设置分区总开关（TASK-06）。
+  ///
+  /// 独立于单个模块的 [enabled]，仅控制设置页中模块条目是否展开。
+  @HiveField(7, defaultValue: true)
+  bool moduleSectionEnabled;
+
+  SyncConfig copyWith({
+    bool? enabled,
+    String? serverUrl,
+    String? username,
+    String? passwordEncrypted,
+    SyncFrequency? frequency,
+    DateTime? lastSyncTime,
+    SyncStatus? lastSyncStatus,
+    bool? moduleSectionEnabled,
+  }) {
+    return SyncConfig(
+      enabled: enabled ?? this.enabled,
+      serverUrl: serverUrl ?? this.serverUrl,
+      username: username ?? this.username,
+      passwordEncrypted: passwordEncrypted ?? this.passwordEncrypted,
+      frequency: frequency ?? this.frequency,
+      lastSyncTime: lastSyncTime ?? this.lastSyncTime,
+      lastSyncStatus: lastSyncStatus ?? this.lastSyncStatus,
+      moduleSectionEnabled: moduleSectionEnabled ?? this.moduleSectionEnabled,
+    );
+  }
 }
