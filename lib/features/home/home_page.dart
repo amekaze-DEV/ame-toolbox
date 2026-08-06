@@ -130,26 +130,54 @@ class _HomeContent extends ConsumerWidget {
     final layoutMode = ref.watch(layoutControllerProvider).layoutMode;
     final moduleController = ref.watch(moduleControllerProvider);
     final enabledModules = moduleController.enabledModules;
+    final dashboardWidgets = _collectDashboardWidgets(context, ref, enabledModules);
 
     return Padding(
       padding: const EdgeInsets.all(16),
       child: layoutMode == LayoutMode.portrait
-          ? ReorderableListView.builder(
-              itemCount: enabledModules.length,
-              proxyDecorator: _proxyDecorator,
-              itemBuilder: (context, index) {
-                final module = enabledModules[index];
-                return _ModuleCardListItem(
-                  key: ValueKey(module.definition.id),
-                  module: module,
-                  onTap: () => _selectModule(ref, index + 1),
-                );
-              },
-              onReorderItem: (oldIndex, newIndex) =>
-                  moduleController.reorderEnabledModules(oldIndex, newIndex),
+          ? CustomScrollView(
+              slivers: [
+                if (dashboardWidgets.isNotEmpty)
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: dashboardWidgets[index],
+                      ),
+                      childCount: dashboardWidgets.length,
+                    ),
+                  ),
+                SliverReorderableList(
+                  itemCount: enabledModules.length,
+                  proxyDecorator: _proxyDecorator,
+                  itemBuilder: (context, index) {
+                    final module = enabledModules[index];
+                    return _ModuleCardListItem(
+                      key: ValueKey(module.definition.id),
+                      module: module,
+                      onTap: () => _selectModule(ref, index + 1),
+                    );
+                  },
+                  onReorder: (oldIndex, newIndex) =>
+                      moduleController.reorderEnabledModules(oldIndex, newIndex),
+                ),
+              ],
             )
           : CustomScrollView(
               slivers: [
+                if (dashboardWidgets.isNotEmpty)
+                  SliverGrid(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 1.6,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => dashboardWidgets[index],
+                      childCount: dashboardWidgets.length,
+                    ),
+                  ),
                 SliverGrid(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
@@ -173,6 +201,18 @@ class _HomeContent extends ConsumerWidget {
               ],
             ),
     );
+  }
+
+  List<Widget> _collectDashboardWidgets(
+    BuildContext context,
+    WidgetRef ref,
+    List<ModuleContract> enabledModules,
+  ) {
+    final widgets = <Widget>[];
+    for (final module in enabledModules) {
+      widgets.addAll(module.buildDashboardWidgets(context, ref));
+    }
+    return widgets;
   }
 
   Widget _proxyDecorator(

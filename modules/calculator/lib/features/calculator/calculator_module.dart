@@ -6,7 +6,13 @@ import 'package:ametoolbox/core/models/module_summary.dart';
 import 'package:ametoolbox/core/modules/module_contract.dart';
 import 'package:ametoolbox/core/storage/storage_service.dart';
 
+import 'data/calculator_config_repository.dart';
+import 'models/calculator_config.dart';
 import 'pages/calculator_page.dart';
+import 'pages/calculator_settings_page.dart';
+import 'providers/calculator_config_controller.dart';
+import 'widgets/calculator_dashboard_history_card.dart';
+import 'widgets/calculator_dashboard_quick_calc_card.dart';
 
 /// 多功能计算器模块。
 ///
@@ -15,14 +21,19 @@ import 'pages/calculator_page.dart';
 class CalculatorModule implements ModuleContract {
   CalculatorModule();
 
-  List<Map<String, dynamic>> _history = [];
+  CalculatorConfigRepository? _repository;
+  CalculatorConfigController? _configController;
+
+  /// 暴露内部配置控制器，供独立运行入口覆盖 [calculatorConfigProvider] 使用，
+  /// 确保模块契约与 UI 层共享同一状态实例。
+  CalculatorConfigController? get configController => _configController;
 
   @override
   ModuleDefinition get definition => const ModuleDefinition(
         id: 'calculator',
         name: '多功能计算器',
-        description: '表达式计算与历史记录',
-        iconName: 'calculator',
+        description: '表达式计算、单位换算、几何与汇率计算',
+        iconName: 'calculate',
         defaultEnabled: true,
       );
 
@@ -32,37 +43,75 @@ class CalculatorModule implements ModuleContract {
   }
 
   @override
-  Widget? buildSettingsPage(BuildContext context, WidgetRef ref) => null;
+  Widget? buildSettingsPage(BuildContext context, WidgetRef ref) {
+    return const CalculatorSettingsPage();
+  }
+
+  @override
+  List<Widget> buildDashboardWidgets(BuildContext context, WidgetRef ref) {
+    final config = _configController?.config ?? CalculatorConfig.defaults;
+    final widgets = <Widget>[];
+
+    if (config.dashboardQuickCalc) {
+      widgets.add(const CalculatorDashboardQuickCalcCard());
+    }
+    if (config.dashboardHistory) {
+      widgets.add(const CalculatorDashboardHistoryCard());
+    }
+
+    // 按配置顺序排序；两个卡片时，order 小的在前。
+    if (widgets.length == 2) {
+      if (config.dashboardQuickCalcOrder > config.dashboardHistoryOrder) {
+        return widgets.reversed.toList();
+      }
+    }
+    return widgets;
+  }
 
   @override
   ModuleSummary get summary {
-    final lastResult = _history.isNotEmpty ? _history.first['result'] : '-';
+    final config = _configController?.config ?? CalculatorConfig.defaults;
+    final history = config.history;
+    if (history.isEmpty) {
+      return const ModuleSummary(
+        label: '多功能计算器',
+        value: '科学计算、单位换算、几何与汇率',
+      );
+    }
     return ModuleSummary(
       label: '最近计算',
-      value: lastResult as String,
+      value: history.first.result,
     );
   }
 
   @override
   Future<void> initialize(StorageService storage) async {
-    final data = await storage.loadData('calculator_history');
-    _history = (data?['history'] as List<dynamic>?)
-            ?.cast<Map<String, dynamic>>() ??
-        [];
+    _repository = CalculatorConfigRepository(storage: storage);
+    _configController = CalculatorConfigController(repository: _repository!);
+    await _configController!.load();
   }
 
   @override
-  Future<void> dispose() async {}
+  Future<void> dispose() async {
+    _configController?.dispose();
+    _configController = null;
+    _repository = null;
+  }
 
   @override
-  Map<String, dynamic> exportData() => {
-        'calculator_history': {'history': _history},
-      };
+  Map<String, dynamic> exportData() {
+    final config = _configController?.config ?? CalculatorConfig.defaults;
+    return {
+      'module_calculator_config': config.toJson(),
+    };
+  }
 
   @override
   void importData(Map<String, dynamic> data) {
-    _history = (data['calculator_history']?['history'] as List<dynamic>?)
-            ?.cast<Map<String, dynamic>>() ??
-        [];
+    final configJson = data['module_calculator_config'] as Map<String, dynamic>?;
+    if (configJson == null) return;
+
+    final config = CalculatorConfig.fromJson(configJson);
+    _configController?.updateConfig(config);
   }
 }

@@ -1,199 +1,207 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ametoolbox/core/layout/responsive_builder.dart';
+import 'package:ametoolbox/shared/widgets/adaptive_button.dart';
 
-import '../models/calculation.dart';
-import '../services/calculator_service.dart';
+import '../calculator_module.dart';
+import '../models/calculator_config.dart';
+import '../models/calculator_type.dart';
+import '../providers/calculator_config_provider.dart';
+import '../widgets/calculator_history_panel.dart';
+import 'exchange_rate_page.dart';
+import 'geometry_page.dart';
+import 'history_page.dart';
+import 'radix_converter_page.dart';
+import 'scientific_calculator_page.dart';
+import 'standard_cubic_mass_page.dart';
+import 'unit_converter_page.dart';
 
-final calculatorServiceProvider = Provider((_) => const CalculatorService());
-
-final historyProvider = StateProvider<List<Calculation>>((_) => []);
-
-final expressionProvider = StateProvider<String>((_) => '');
-
+/// 多功能计算器模块主页。
+///
+/// 负责顶部计算器类型切换、科学计数法开关、历史入口，
+/// 并根据当前类型渲染对应的子计算器页面。
+///
+/// 竖屏为单列布局，横屏为双列布局并在侧边固定显示历史面板，
+/// 面板左右位置由 [CalculatorConfig.historyPanelOnLeft] 控制。
 class CalculatorPage extends ConsumerWidget {
-  const CalculatorPage({super.key});
+  final CalculatorModule? module;
+
+  const CalculatorPage({super.key, this.module});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final expression = ref.watch(expressionProvider);
-    final history = ref.watch(historyProvider);
+    return ResponsiveBuilder(
+      portraitBuilder: (context) => _buildPortrait(context, ref),
+      landscapeBuilder: (context) => _buildLandscape(context, ref),
+    );
+  }
+
+  Widget _buildPortrait(BuildContext context, WidgetRef ref) {
+    final configController = ref.watch(calculatorConfigProvider);
+    final config = configController.config;
+    final currentType = config.currentType;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('多功能计算器'),
         centerTitle: true,
+        leading: _buildTypeSelector(context, ref, currentType),
+        actions: [
+          AdaptiveIconButton(
+            icon: const Icon(Icons.history),
+            onPressed: () => _openHistory(context),
+            tooltip: '计算历史',
+          ),
+        ],
       ),
       body: Column(
         children: [
+          _buildTopControls(context, ref, currentType, config),
           Expanded(
-            flex: 2,
-            child: _DisplayPanel(
-              expression: expression,
-              history: history,
-            ),
-          ),
-          Expanded(
-            flex: 5,
-            child: _Keypad(
-              onInput: (value) => _handleInput(ref, value),
-            ),
+            child: _buildCalculatorBody(context, ref, currentType),
           ),
         ],
       ),
     );
   }
 
-  void _handleInput(WidgetRef ref, String value) {
-    final current = ref.read(expressionProvider);
-    switch (value) {
-      case 'C':
-        ref.read(expressionProvider.notifier).state = '';
-      case '⌫':
-        if (current.isNotEmpty) {
-          ref.read(expressionProvider.notifier).state =
-              current.substring(0, current.length - 1);
-        }
-      case '=':
-        _calculate(ref, current);
-      default:
-        ref.read(expressionProvider.notifier).state = current + value;
-    }
-  }
+  Widget _buildLandscape(BuildContext context, WidgetRef ref) {
+    final configController = ref.watch(calculatorConfigProvider);
+    final config = configController.config;
+    final currentType = config.currentType;
 
-  void _calculate(WidgetRef ref, String expression) {
-    if (expression.isEmpty) return;
-    final service = ref.read(calculatorServiceProvider);
-    try {
-      final result = service.evaluate(expression);
-      ref.read(expressionProvider.notifier).state = result.result;
-      ref.read(historyProvider.notifier).update((state) => [result, ...state]);
-    } on FormatException catch (e) {
-      ref.read(expressionProvider.notifier).state = 'Error: ${e.message}';
-    }
-  }
-}
+    final calculatorBody = Column(
+      children: [
+        _buildTopControls(context, ref, currentType, config),
+        Expanded(
+          child: _buildCalculatorBody(context, ref, currentType),
+        ),
+      ],
+    );
 
-class _DisplayPanel extends StatelessWidget {
-  const _DisplayPanel({required this.expression, required this.history});
+    final historyPanel = CalculatorHistoryPanel(
+      onBackfillExpression: () {},
+    );
 
-  final String expression;
-  final List<Calculation> history;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+    return Scaffold(
+      body: Row(
         children: [
-          Expanded(
-            child: ListView.builder(
-              reverse: true,
-              itemCount: history.length,
-              itemBuilder: (context, index) {
-                final item = history[index];
-                return Text(
-                  '${item.expression} = ${item.result}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                  textAlign: TextAlign.end,
-                );
-              },
+          if (config.historyPanelOnLeft)
+            Expanded(
+              child: historyPanel,
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            expression.isEmpty ? '0' : expression,
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-            textAlign: TextAlign.end,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
+          Expanded(child: calculatorBody),
+          if (!config.historyPanelOnLeft)
+            Expanded(
+              child: historyPanel,
+            ),
         ],
       ),
     );
   }
-}
 
-class _Keypad extends StatelessWidget {
-  const _Keypad({required this.onInput});
-
-  final ValueChanged<String> onInput;
-
-  @override
-  Widget build(BuildContext context) {
-    final buttons = const [
-      ['C', '⌫', '%', '÷'],
-      ['7', '8', '9', '×'],
-      ['4', '5', '6', '-'],
-      ['1', '2', '3', '+'],
-      ['0', '.', '=', 'sqrt'],
-    ];
-
+  Widget _buildTopControls(
+    BuildContext context,
+    WidgetRef ref,
+    CalculatorType currentType,
+    CalculatorConfig config,
+  ) {
     return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        children: buttons.map((row) {
-          return Expanded(
-            child: Row(
-              children: row.map((label) {
-                return Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(6),
-                    child: _CalcButton(
-                      label: label,
-                      onPressed: () => onInput(label),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildTypeDropdown(context, ref, currentType),
+              if (currentType == CalculatorType.scientific) ...[
+                const SizedBox(width: 12),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '科学计数法',
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
-                  ),
-                );
-              }).toList(),
-            ),
+                    Switch(
+                      value: config.scientificNotation,
+                      onChanged: (value) {
+                        ref.read(calculatorConfigProvider).setScientificNotation(value);
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypeSelector(
+    BuildContext context,
+    WidgetRef ref,
+    CalculatorType currentType,
+  ) {
+    // 仅在横屏或需要紧凑显示时使用图标按钮；当前版本统一使用下拉。
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildTypeDropdown(
+    BuildContext context,
+    WidgetRef ref,
+    CalculatorType currentType,
+  ) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 180),
+      child: DropdownMenu<CalculatorType>(
+        initialSelection: currentType,
+        requestFocusOnTap: false,
+        label: const Text('计算器'),
+        dropdownMenuEntries: CalculatorType.values.map((type) {
+          return DropdownMenuEntry(
+            value: type,
+            label: type.displayName,
           );
         }).toList(),
+        onSelected: (value) {
+          if (value != null) {
+            ref.read(calculatorConfigProvider).setCurrentType(value);
+          }
+        },
       ),
     );
   }
-}
 
-class _CalcButton extends StatelessWidget {
-  const _CalcButton({required this.label, required this.onPressed});
-
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isOperator = ['÷', '×', '-', '+', '='].contains(label);
-    final isFunction = ['C', '⌫', '%', 'sqrt'].contains(label);
-
-    Color? background;
-    Color? foreground;
-    if (isOperator) {
-      background = colorScheme.primary;
-      foreground = colorScheme.onPrimary;
-    } else if (isFunction) {
-      background = colorScheme.secondaryContainer;
-      foreground = colorScheme.onSecondaryContainer;
+  Widget _buildCalculatorBody(
+    BuildContext context,
+    WidgetRef ref,
+    CalculatorType currentType,
+  ) {
+    switch (currentType) {
+      case CalculatorType.scientific:
+        return ScientificCalculatorPage(
+          onHistoryPressed: () => _openHistory(context),
+        );
+      case CalculatorType.standardCubicToMass:
+        return const StandardCubicMassPage();
+      case CalculatorType.unitConverter:
+        return const UnitConverterPage();
+      case CalculatorType.geometry:
+        return const GeometryPage();
+      case CalculatorType.radix:
+        return const RadixConverterPage();
+      case CalculatorType.exchangeRate:
+        return const ExchangeRatePage();
     }
+  }
 
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: background,
-        foregroundColor: foreground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        padding: EdgeInsets.zero,
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.titleLarge,
-      ),
+  void _openHistory(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const HistoryPage()),
     );
   }
 }

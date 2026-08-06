@@ -31,7 +31,7 @@
 | [REQ-F2] | 标准立方与质量的转换（标准立方米 Nm³ 气体体积 ↔ 质量，基于摩尔质量计算） | §3.2 |
 | [REQ-F3] | 单位转换计算（长度、重量、温度、面积、体积、速度、时间、角度等） | §3.3 |
 | [REQ-F4] | 基础几何计算（圆锥、圆柱、圆筒、方块、棱锥、方体等）的面积、表面积、体积 | §3.4 |
-| [REQ-F5] | 进制转换器（二 / 八 / 十 / 十六进制互转、位运算） | §3.5 |
+| [REQ-F5] | 进制转换器（二 / 八 / 十 / 十六进制互转） | §3.5 |
 | [REQ-F6] | 汇率计算器，采用公开汇率源更新方案 | §3.6 |
 
 ### 1.3 计算器清单
@@ -42,15 +42,16 @@
 | C-02 | 标准立方米-质量转换 | 标准立方米（Nm³）气体体积 ↔ 质量换算 | P1 | 否（逻辑简单，自研） | — |
 | C-03 | 单位转换器 | 8 类单位实时换算 | P1 | 是 | `units_converter` |
 | C-04 | 几何计算器 | 8 种几何体的面积 / 表面积 / 体积 | P1 | 否（公式库自研） | — |
-| C-05 | 进制转换器 | 进制互转、位运算 | P2 | 否（Dart `BigInt` 自研） | — |
+| C-05 | 进制转换器 | 进制互转 | P2 | 否（Dart `BigInt` 自研） | — |
 | C-06 | 汇率计算器 | 多货币换算、公开源、离线缓存 | P2 | 否（仅网络请求用 `dio`，汇率逻辑自研） | `dio`（底座已含则复用） |
 
 ### 1.4 设计原则
 
 - **统一入口**：6 个计算器通过顶部 `DropdownMenu<CalculatorType>` 在同一页面切换。
-- **统一历史**：仅科学计算器保存最近 20 条历史，其余计算器不保存历史。
+- **统一历史**：所有计算器均保存最近 20 条历史；`CalculationHistory` 通过 `metadata` 字段保留各计算器输入参数，支持返回模块时精确回填。
 - **离线优先**：汇率数据可手动刷新并本地缓存，无网络时允许使用缓存并提示“离线缓存”。
 - **不侵入底座**：模块所有代码位于 `modules/calculator/`，不修改 `lib/core/` 及以下底座实现。
+- **严格 MD3**：所有组件、颜色、形状、排版均遵循 Material Design 3 规范，优先使用 Flutter 内置 MD3 组件，不自定义视觉样式。
 
 ---
 
@@ -60,7 +61,7 @@
 
 | 约束 ID | 要求 | 模块落地方式 |
 |---------|------|--------------|
-| C-001 | MD3 | 全部使用 `Theme.of(context).colorScheme` 与内置 MD3 组件 |
+| C-001 | MD3 | 颜色全部来自 `Theme.of(context).colorScheme`；形状遵循 4/12/16dp 圆角规范；排版使用 MD3 `textTheme`；组件优先使用 `FilledButton`、`OutlinedButton`、`TextButton`、`IconButton`、`Card`、`ListTile`、`Chip`、`DropdownMenu`、`SegmentedButton`、`TextField` 等内置 MD3 组件，禁止自定义 `Material` + `InkWell` 模拟按钮/卡片 |
 | C-003 / C-005 | UI 层无平台代码 | 不调用 `Platform.is*` / `dart:io`，通过 `LayoutController` / `InputMode` Provider 读取 |
 | C-008 | Riverpod | 所有页面继承 `ConsumerWidget`，状态通过 `ref.watch/read` 访问 |
 | C-009 | 响应式断点 | 使用底座 `ResponsiveBuilder` / `LayoutMode` 判定横竖屏 |
@@ -132,23 +133,27 @@ function   := 'sin' | 'cos' | 'tan' | 'asin' | 'acos' | 'atan'
 
 #### 3.1.5 键盘布局
 
-完整键盘采用**4 列竖版布局**，按键按功能分区排列：
+完整键盘采用**4 列竖版布局**，所有按键均使用 Material Design 3 内置按钮组件，不得自定义视觉样式：
 
-- **上方区域**：高级算符与函数（三角、对数、常数、括号、幂根等）
-- **左下区域**：数字小键盘（`0-9`、`.`、`Ans`）
-- **数字区上方一行及右侧一列**：基础算符与编辑键（`C`、`⌫`、`%`、`÷`、`×`、`-`、`+`、`=`）
+- **数字键**（`0-9`、`.`、`Ans`）：`FilledButton.tonal`
+- **编辑键与等号**（`C`、`⌫`、`=`）：`FilledButton`
+- **算符与函数键**（`%`、`÷`、`×`、`-`、`+`、三角、对数、常数、括号、幂根等）：`OutlinedButton` 或 `TextButton`
+- **布局分区**：
+  - 上方区域：高级算符与函数；
+  - 左下区域：数字小键盘；
+  - 数字区上方一行及右侧一列：基础算符与编辑键。
 
 **完整键盘（`showFullKeyboard = true`）**
 
 ```text
 ┌──────────────────────────┐
-│  sin   cos   tan   2nd   │  高级算符/函数
+│  sin   cos   tan   2nd   │  高级算符/函数（OutlinedButton / TextButton）
 │  log    ln    π     e    │
 │   ^     √     (     )    │
 │  EXP   fac   abs         │
 ├──────────────────────────┤
-│   C     %     ×     ÷    │  基础算符：数字区上方一行
-│   7     8     9     -    │  数字区 + 右侧基础算符列
+│   C     %     ×     ÷    │  基础算符：数字区上方一行（FilledButton / OutlinedButton）
+│   7     8     9     -    │  数字区（FilledButton.tonal）+ 右侧算符列
 │   4     5     6     +    │
 │   1     2     3     =    │
 │   0     .    Ans    ⌫    │
@@ -168,12 +173,14 @@ function   := 'sin' | 'cos' | 'tan' | 'asin' | 'acos' | 'atan'
 
 #### 3.1.6 历史记录
 
-- 仅保存**计算成功**的表达式与结果，最多 20 条。
-- 每条记录包含：`expression`（原始表达式）、`result`（格式化结果）、`timestamp`（UTC）、`angleMode`（DEG/RAD）。
+- 所有计算器类型均保存历史，最多 20 条；仅保存计算成功或有效换算结果，不保存错误记录。
+- 每条记录包含：`expression`（原始表达式/输入描述）、`result`（格式化结果）、`timestamp`（UTC）、`calculatorType`（计算器类型）、`metadata`（各计算器特有的输入参数，如单位、几何体、气体类型等）。
+- 科学计算器额外保留 `angleMode`（DEG/RAD）。
 - 竖屏：点击右上角历史入口进入全屏历史页。
 - 横屏：历史面板作为右/左列固定显示。
 - 历史项交互：
-  - 单击：将表达式回填到输入框。
+  - 单击“返回”图标：将表达式/输入参数回填到对应计算器。
+  - 菜单“回填结果”：将结果值追加到当前输入。
   - 长按 / 右键：删除单条。
   - 顶部菜单：清空全部历史。
 
@@ -290,11 +297,13 @@ function   := 'sin' | 'cos' | 'tan' | 'asin' | 'acos' | 'atan'
 
 #### 3.3.2 交互规则
 
-- 顶部 `SegmentedButton` / `DropdownMenu` 选择类别。
-- 下方两列：左侧单位选择器 + 数值输入框；右侧单位选择器 + 结果只读显示。
+- 顶部 `DropdownMenu` 选择类别；窗口缩窄时 `DropdownMenu` 自动折叠，避免 `SegmentedButton` 挤压。
+- 下方两列：左侧“输入”数值框 + 源单位选择器；右侧“结果”只读框 + 目标单位选择器。
+- 数值输入框支持物理键盘输入与模块内 `NumericKeypad`（MD3 按钮组件）输入。
 - 输入任意一侧数值，另一侧实时换算。
 - 提供“交换”按钮，同时交换两侧单位与数值。
 - 输入为空时，结果显示空或 `-`。
+- 单位下拉菜单显示中文注释，如 `m（米）`、`km（千米）`。
 
 #### 3.3.3 温度换算公式
 
@@ -333,6 +342,7 @@ K  → °C : C = K - 273.15
 
 - 顶部选择几何体。
 - 动态显示所需输入字段；输入后立即计算所有可计算量。
+- 数值输入框支持模块内 `NumericKeypad`（MD3 按钮组件）输入，同时支持物理键盘输入。
 - 结果以卡片列表形式展示，每个结果标注名称与数值。
 - 提供“公式说明”展开项，显示当前几何体的公式（纯文本）。
 
@@ -363,23 +373,7 @@ K  → °C : C = K - 273.15
   - 非十进制的小数仅支持二进制、八进制、十六进制转十进制，暂不支持相互转小数。
 - 输入非法字符时，输入框拒绝输入并震动反馈（仅触控）。
 
-#### 3.5.3 位运算
-
-位运算仅对整数生效，使用 `BigInt` 实现：
-
-| 运算 | 说明 |
-|------|------|
-| AND | 按位与 |
-| OR  | 按位或 |
-| XOR | 按位异或 |
-| NOT | 按位取反，默认按 32 位有符号整数处理；可在设置中选择 8/16/32/64 位 |
-| 左移 `<<` | 左侧操作数左移右侧操作数指定的位数 |
-| 右移 `>>` | 左侧操作数右移右侧操作数指定的位数 |
-
-- 位运算界面提供两个操作数输入框（默认十进制，可切换进制）和一个结果框。
-- 结果框提供“复制”按钮。
-
-#### 3.5.4 其他功能
+#### 3.5.3 其他功能
 
 - “复制结果”按钮：将当前所有进制结果拼接为文本复制到剪贴板。
 - 十进制输入框支持负数；其他进制框仅支持正数。
@@ -449,8 +443,7 @@ class CalculatorConfig {
   final int dashboardQuickCalcOrder;     // 快速计算器卡片排序，默认 0
   final int dashboardHistoryOrder;       // 历史卡片排序，默认 1
   final String exchangeRateApiUrl;       // 自定义汇率源，默认公开源
-  final int radixBitWidth;               // 进制 NOT 运算位宽，默认 32
-  final List<CalculationHistory> history;// 科学计算器历史，最多 20 条
+  final List<CalculationHistory> history;// 所有计算器历史，最多 20 条
   final ExchangeRateCache? exchangeRates;// 汇率缓存
 
   const CalculatorConfig({...});
@@ -461,11 +454,12 @@ class CalculatorConfig {
 
 ```dart
 class CalculationHistory {
-  final String expression;
-  final String result;
-  final DateTime timestamp;
-  final bool isError;
-  final String angleMode; // 'DEG' | 'RAD'
+  final String expression;              // 原始表达式 / 输入描述
+  final String result;                  // 格式化结果
+  final DateTime timestamp;             // UTC 时间戳
+  final bool isError;                   // 是否为错误记录（不保存入历史，但保留字段兼容）
+  final String calculatorType;          // 计算器类型，如 'scientific' / 'unitConverter' / 'geometry' 等
+  final Map<String, dynamic> metadata;  // 各计算器特有输入参数（单位、几何体、气体类型、角度模式等）
 
   Map<String, dynamic> toJson();
   factory CalculationHistory.fromJson(Map<String, dynamic> json);
@@ -509,7 +503,7 @@ class ExchangeRateCache {
 └────────────────────────────────────────────┘
 ```
 
-- 右上角历史入口按钮仅在**科学计算器**且竖屏时显示。
+- 右上角历史入口按钮在竖屏时始终显示，所有计算器类型均可进入历史页面。
 - 顶部控制区采用 `Wrap` 或 `Row` + `Spacer`，保证类型选择器、科学计数法开关与历史按钮不拥挤；必要时自动换行。
 
 #### 横屏（Landscape）
@@ -535,7 +529,7 @@ class ExchangeRateCache {
 |------|------|----------|------|
 | 计算器类型下拉 | AppBar 左侧 | 始终显示 | `DropdownMenu<CalculatorType>`，带图标 |
 | 科学计数法 Switch | AppBar 标题下方 / 右侧 | 仅科学计算器 | 标签“科学计数法” |
-| 历史入口按钮 | AppBar 右侧 | 竖屏 + 科学计算器 | 图标 `history` |
+| 历史入口按钮 | AppBar 右侧 | 竖屏 | 图标 `history`，所有计算器类型可见 |
 | DEG/RAD 切换 | 结果区下方 | 仅科学计算器 | `SegmentedButton` |
 
 ### 5.3 结果显示区
@@ -546,8 +540,8 @@ class ExchangeRateCache {
 
 ### 5.4 键盘显示规则
 
-- 设置中“键盘显示”开关（`showFullKeyboard`）关闭后，主画面隐藏数字键 `0-9` 与小数点 `.`，仅保留运算符、函数、常数与 `=`。
-- 非科学计算器（单位换算、几何、标准立方米-质量、进制、汇率）不使用数字键盘，统一使用 `TextField` 输入。
+- 设置中“键盘显示”开关（`showFullKeyboard`）关闭后，科学计算器主画面隐藏数字键 `0-9` 与小数点 `.`，仅保留运算符、函数、常数与 `=`。
+- 非科学计算器（单位换算、几何、标准立方米-质量）统一使用模块内 `NumericKeypad`（MD3 按钮组件）输入；输入框同时保持可聚焦，支持物理键盘双输入。进制、汇率计算器保留 `TextField` 输入。
 
 ---
 
@@ -631,7 +625,7 @@ const ModuleDefinition(
 | Key | 内容 |
 |-----|------|
 | `module_calculator_config` | 模块配置 |
-| `module_calculator_history` | 科学计算器历史 |
+| `module_calculator_history` | 所有计算器历史 |
 | `module_calculator_exchange_rates` | 汇率缓存 |
 
 > 底座配置（如模块启用状态）使用 `module_state_box` 中的 `calculator` key，不由本模块直接读写。
@@ -655,7 +649,7 @@ const ModuleDefinition(
 - [ ] [REQ-F2] 标准立方米-质量转换基于摩尔质量计算，支持内置 7 种气体及自定义摩尔质量，双向换算正确。
 - [ ] [REQ-F3] 单位转换器支持 8 类单位，温度换算精度正确。
 - [ ] [REQ-F4] 几何计算器支持 §3.4 列出的 8 种几何体，面积 / 表面积 / 体积计算正确。
-- [ ] [REQ-F5] 进制转换器支持 2/8/10/16 进制互转及 6 种位运算。
+- [ ] [REQ-F5] 进制转换器支持 2/8/10/16 进制互转。
 - [ ] [REQ-F6] 汇率计算器支持 12 种货币，公开源刷新与离线缓存正常工作。
 - [ ] [REQ-A1] 横竖屏布局切换正确，横屏历史面板位置可设置交换。
 - [ ] [REQ-A2] 顶部类型选择器与科学计数法开关布局合理，竖屏不与历史入口拥挤。

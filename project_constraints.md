@@ -21,7 +21,7 @@
 | 首发平台 | Windows |
 | 架构模式 | 主项目（APP 底座）+ 子项目（功能模块）分层架构 |
 | 状态管理 | Riverpod（编译时安全，无需 BuildContext，独立可测试） |
-| 数据同步 | WebDAV 协议（RFC 4918），无用户体系 |
+| 数据同步 | WebDAV 协议（RFC 4918），无内置用户体系 |
 | 首版模块 | 计数器、计时器、检查表（3 个，均默认启用） |
 
 ---
@@ -37,7 +37,7 @@
 | C-003 | 多平台支持 | Windows、macOS、HarmonyOS、Android、iOS | 初始版本以 Windows 为首发平台；UI 层不使用任何平台专有 API，确保后续移植到其他平台时无需修改 UI 代码 | 在 UI 层使用 `Platform.isWindows` |
 | C-004 | 输入方式适配 | 触控 + 键鼠双模式 | 所有交互组件同时适配触控操作（点击/滑动/长按）和桌面键鼠操作（点击/悬停/右键/键盘快捷键）。通过输入模式判定自动切换交互行为，用户无感 | 仅适配触控，键鼠下无法使用右键菜单 |
 | C-005 | UI 可移植性 | UI 层与平台层完全解耦 | `lib/features/` 和 `lib/shared/` 下的所有 Widget 代码不含任何 `Platform.is*` 判断或 `dart:io` 平台 API 调用。平台差异通过 `lib/core/platform/` 抽象层注入 | 模块代码中直接调用 `Platform.isWindows` |
-| C-006 | 用户体系 | 无用户体系 | 不设登录/注册，无账号概念，数据以设备维度存储 | 引入 Firebase Auth 等登录系统 |
+| C-006 | 用户体系 | 无内置用户体系 | AMEToolbox 自身不设登录/注册；数据以 WebDAV 账号维度存储，同一 WebDAV 账号（服务器地址+用户名+密码）下的所有设备共享同一套 APP 数据 | 引入 AMEToolbox 自有账号系统（如 Firebase Auth、自建登录） |
 | C-007 | 数据同步 | WebDAV 协议 | 支持自建 WebDAV 服务器，适配工厂内网 | 依赖云端同步服务（如 iCloud、Google Drive） |
 | C-008 | 状态管理 | Riverpod | 使用 `ConsumerWidget` + `ref.watch/read` 模式管理状态 | 使用 `setState` + `InheritedWidget` 或 GetX/Bloc 等其他方案 |
 | C-009 | 布局适配 | 响应式断点机制 | 使用底座 `ResponsiveBuilder` 适配横竖屏，不使用自定义屏幕判定逻辑 | 固定宽度/高度，或自行计算横竖屏 |

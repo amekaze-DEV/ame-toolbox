@@ -56,6 +56,10 @@ class _PlaceholderModule implements ModuleContract {
   Widget? buildSettingsPage(BuildContext context, WidgetRef ref) => null;
 
   @override
+  List<Widget> buildDashboardWidgets(BuildContext context, WidgetRef ref) =>
+      const [];
+
+  @override
   ModuleSummary get summary => ModuleSummary(
         label: definition.name,
         value: '-',

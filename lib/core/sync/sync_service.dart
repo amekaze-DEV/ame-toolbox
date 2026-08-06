@@ -27,6 +27,11 @@ class SyncService extends ChangeNotifier {
 
   static const _syncMetaKey = 'webdav_sync_meta';
 
+  /// 远程 WebDAV 上的应用专用目录名。
+  ///
+  /// 同一 WebDAV 账号下的所有设备共享此目录，实现跨端同步。
+  static const _remoteAppFolder = 'AMEToolbox';
+
   SyncConfig _config = SyncConfig();
   bool _isSyncing = false;
   String? _errorMessage;
@@ -145,7 +150,7 @@ class SyncService extends ChangeNotifier {
   }
 
   Future<void> _performSync(WebDavClient client) async {
-    final devicePath = '/${deviceInfo.deviceId}';
+    const devicePath = '/$_remoteAppFolder';
     await client.ensureDirectory(devicePath);
 
     final serverRaw = await client.readString('$devicePath/data.json');

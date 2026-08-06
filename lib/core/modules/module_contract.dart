@@ -24,6 +24,12 @@ abstract class ModuleContract {
   /// “设置 → 模块设置”点击对应模块会进入此页面。
   Widget? buildSettingsPage(BuildContext context, WidgetRef ref) => null;
 
+  /// 模块在首页仪表盘提供的额外卡片 Widget 列表（可选）。
+  ///
+  /// 默认返回空列表，表示不在首页显示额外卡片。
+  /// 返回的 Widget 应自行管理状态，并遵循底座卡片视觉规范。
+  List<Widget> buildDashboardWidgets(BuildContext context, WidgetRef ref) => const [];
+
   /// 主页卡片摘要数据（显示在主页模块卡片上）。
   ///
   /// 同步返回，避免异步加载导致的卡片闪烁。
