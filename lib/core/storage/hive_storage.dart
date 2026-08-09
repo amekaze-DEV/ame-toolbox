@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -43,7 +44,11 @@ class HiveStorage implements StorageService {
 
   @override
   Future<void> initialize() async {
-    await Hive.initFlutter();
+    final dir = Directory('${Directory.current.path}/.hive_data');
+    if (!dir.existsSync()) {
+      dir.createSync(recursive: true);
+    }
+    await Hive.initFlutter(dir.path);
     _registerAdapters();
 
     _themeBox = await Hive.openBox<ThemeConfig>(_themeBoxName);

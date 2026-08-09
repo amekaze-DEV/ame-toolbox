@@ -45,13 +45,13 @@ class ScientificKeypad extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final rows = showFullKeyboard
         ? (secondFunction ? _secondRows() : _firstRows())
-        : (secondFunction ? _secondCompactRows() : _firstCompactRows());
+        : (secondFunction ? _secondCompact6ColRows() : _firstCompact6ColRows());
 
     return LayoutBuilder(
       builder: (context, constraints) {
         const keyAspectRatio = 2.0;
-        final columnCount = showFullKeyboard ? 6 : 4;
-        const rowCount = 6;
+        const columnCount = 6;
+        final rowCount = showFullKeyboard ? 6 : 4;
         const containerPadding = 6.0;
         const rowSpacing = 4.0;
         const cellSpacing = 4.0;
@@ -60,15 +60,19 @@ class ScientificKeypad extends StatelessWidget {
         final verticalSpacing = containerPadding * 2 + rowCount * rowSpacing;
 
         final screenHeight = MediaQuery.sizeOf(context).height;
-        final maxAllowedHeight = screenHeight / 2;
+        final maxAllowedHeight = showFullKeyboard ? screenHeight * 0.4 : screenHeight * 0.27;
+        final minAllowedHeight = 0.0;
         final widthFromHeight = horizontalSpacing +
             columnCount *
                 (maxAllowedHeight - verticalSpacing) /
                 rowCount *
                 keyAspectRatio;
         final keyboardWidth = math.min(constraints.maxWidth, widthFromHeight);
-        final keyboardHeight = verticalSpacing +
-            rowCount * (keyboardWidth - horizontalSpacing) / columnCount / keyAspectRatio;
+        final keyboardHeight = math.max(
+          minAllowedHeight,
+          verticalSpacing +
+              rowCount * (keyboardWidth - horizontalSpacing) / columnCount / keyAspectRatio,
+        );
 
         return Center(
           child: SizedBox(
@@ -78,7 +82,6 @@ class ScientificKeypad extends StatelessWidget {
               color: colorScheme.surfaceContainerHighest,
               padding: const EdgeInsets.all(containerPadding),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 children: rows.map((row) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: rowSpacing),
@@ -117,7 +120,7 @@ class ScientificKeypad extends StatelessWidget {
         const _KeyCell(label: 'cos', value: 'cos('),
         const _KeyCell(label: 'tan', value: 'tan('),
         const _KeyCell(label: 'C', value: 'C'),
-        const _KeyCell(label: '⌫', value: 'backspace'),
+        _KeyCell(label: '⌫', value: 'backspace', icon: Icons.backspace_outlined),
       ],
       [
         _KeyCell(label: degrees ? 'DEG' : 'RAD'),
@@ -170,7 +173,7 @@ class ScientificKeypad extends StatelessWidget {
         const _KeyCell(label: 'acos', value: 'acos('),
         const _KeyCell(label: 'atan', value: 'atan('),
         const _KeyCell(label: 'C', value: 'C'),
-        const _KeyCell(label: '⌫', value: 'backspace'),
+        _KeyCell(label: '⌫', value: 'backspace', icon: Icons.backspace_outlined),
       ],
       [
         _KeyCell(label: degrees ? 'DEG' : 'RAD'),
@@ -215,86 +218,78 @@ class ScientificKeypad extends StatelessWidget {
     ];
   }
 
-  /// 精简键盘：隐藏数字键与小数点，保留算符、函数、常数、编辑与等号键。
-  List<List<_KeyCell>> _firstCompactRows() {
+  /// 紧凑键盘（6列 × 4行）：移除数字键，保留函数/算符/编辑键。
+  List<List<_KeyCell>> _firstCompact6ColRows() {
     return [
       [
         _KeyCell(label: '2nd', icon: Icons.keyboard_double_arrow_up),
         const _KeyCell(label: 'sin', value: 'sin('),
         const _KeyCell(label: 'cos', value: 'cos('),
         const _KeyCell(label: 'tan', value: 'tan('),
+        const _KeyCell(label: 'C', value: 'C'),
+        _KeyCell(label: '⌫', value: 'backspace', icon: Icons.backspace_outlined),
       ],
       [
         _KeyCell(label: degrees ? 'DEG' : 'RAD'),
         const _KeyCell(label: 'π', value: 'pi'),
         const _KeyCell(label: '(', value: '('),
         const _KeyCell(label: ')', value: ')'),
-      ],
-      const [
-        _KeyCell(label: 'Ans', value: 'Ans'),
-        _KeyCell(label: '+', value: '+'),
-        _KeyCell(label: '-', value: '-'),
-        _KeyCell(label: '×', value: '×'),
-      ],
-      const [
-        _KeyCell(label: '÷', value: '÷'),
-        _KeyCell(label: '=', value: '='),
-        _KeyCell(label: 'C', value: 'C'),
-        _KeyCell(label: '⌫', value: 'backspace'),
+        const _KeyCell(label: '-', value: '-'),
+        const _KeyCell(label: '+', value: '+'),
       ],
       const [
         _KeyCell(label: 'log', value: 'log('),
         _KeyCell(label: 'ln', value: 'ln('),
         _KeyCell(label: 'e', value: 'e'),
         _KeyCell(label: '^', value: '^'),
+        _KeyCell(label: '÷', value: '÷'),
+        _KeyCell(label: '×', value: '×'),
       ],
       const [
         _KeyCell(label: '√', value: 'sqrt('),
         _KeyCell(label: 'x²', value: '^2'),
         _KeyCell(label: '±', value: '*-1'),
         _KeyCell(label: '%', value: '%'),
+        _KeyCell(label: 'Ans', value: 'Ans'),
+        _KeyCell(label: '=', value: '='),
       ],
     ];
   }
 
-  /// 精简键盘下的第二功能面板。
-  List<List<_KeyCell>> _secondCompactRows() {
+  /// 紧凑键盘下的第二功能面板（6列 × 4行）。
+  List<List<_KeyCell>> _secondCompact6ColRows() {
     return [
       [
         _KeyCell(label: '2nd', icon: Icons.keyboard_double_arrow_up),
         const _KeyCell(label: 'asin', value: 'asin('),
         const _KeyCell(label: 'acos', value: 'acos('),
         const _KeyCell(label: 'atan', value: 'atan('),
+        const _KeyCell(label: 'C', value: 'C'),
+        _KeyCell(label: '⌫', value: 'backspace', icon: Icons.backspace_outlined),
       ],
       [
         _KeyCell(label: degrees ? 'DEG' : 'RAD'),
         const _KeyCell(label: 'π', value: 'pi'),
         const _KeyCell(label: '(', value: '('),
         const _KeyCell(label: ')', value: ')'),
-      ],
-      const [
-        _KeyCell(label: 'Ans', value: 'Ans'),
-        _KeyCell(label: '+', value: '+'),
-        _KeyCell(label: '-', value: '-'),
-        _KeyCell(label: '×', value: '×'),
-      ],
-      const [
-        _KeyCell(label: '÷', value: '÷'),
-        _KeyCell(label: '=', value: '='),
-        _KeyCell(label: 'C', value: 'C'),
-        _KeyCell(label: '⌫', value: 'backspace'),
+        const _KeyCell(label: '-', value: '-'),
+        const _KeyCell(label: '+', value: '+'),
       ],
       const [
         _KeyCell(label: '10^x', value: '10^'),
         _KeyCell(label: 'e^x', value: 'e^'),
         _KeyCell(label: 'e', value: 'e'),
         _KeyCell(label: '1/x', value: '^(-1)'),
+        _KeyCell(label: '÷', value: '÷'),
+        _KeyCell(label: '×', value: '×'),
       ],
       const [
         _KeyCell(label: '³√', value: '^(1/3)'),
         _KeyCell(label: 'x³', value: '^3'),
         _KeyCell(label: 'abs', value: 'abs('),
         _KeyCell(label: 'fac', value: 'fac('),
+        _KeyCell(label: 'Ans', value: 'Ans'),
+        _KeyCell(label: '=', value: '='),
       ],
     ];
   }

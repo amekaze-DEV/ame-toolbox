@@ -99,22 +99,32 @@ class ShiftConfigController extends ChangeNotifier {
 
   /// 新增一个轮班。
   ///
-  /// [groupCount] 为班组数量，[slotNames] 为状态名称列表，[cycleCount] 为循环数。
-  /// 程序会自动生成班组、状态以及默认的循环偏移分配矩阵。
+  /// 接收用户在添加对话框中完整配置的轮班信息（班组、状态、周期安排矩阵），
+  /// 与旧实现由模板自动生成班组/状态不同，这里完全由用户手动设置。
+  ///
+  /// - [name] 轮班名称
+  /// - [baseDate] 轮班起始日期，设定后向前后推算班次
+  /// - [cycleDays] 循环周期天数，范围 1~30
+  /// - [groups] 班组列表（1~8 个）
+  /// - [slots] 轮班状态列表
+  /// - [assignments] 周期安排矩阵（行=班组，列=周期内第几天）
   Future<void> addRotation({
     required String name,
-    required int groupCount,
-    required List<String> slotNames,
-    required int cycleCount,
-    DateTime? baseDate,
+    required DateTime baseDate,
+    required int cycleDays,
+    required List<ShiftGroup> groups,
+    required List<ShiftSlot> slots,
+    required List<List<int>> assignments,
     bool isPrimary = false,
   }) async {
-    final rotation = _buildRotation(
+    final rotation = ShiftRotation(
+      id: _generateId('rotation'),
       name: name.trim(),
-      groupCount: groupCount,
-      slotNames: slotNames,
-      cycleCount: cycleCount,
-      baseDate: dateOnly(baseDate ?? DateTime.now()),
+      baseDate: dateOnly(baseDate),
+      cycleDays: cycleDays,
+      groups: groups,
+      slots: slots,
+      assignments: assignments,
     );
 
     final updatedRotations = [..._config.rotations, rotation];
@@ -125,173 +135,10 @@ class ShiftConfigController extends ChangeNotifier {
     }
   }
 
-  /// 基于模板新增一个轮班。
-  ///
-  /// [templateId] 使用 [ShiftRotationTemplate] 的 ID；[name] 为轮班自定义名称。
-  Future<void> addRotationFromTemplate({
-    required String templateId,
-    required String name,
-    DateTime? baseDate,
-    bool isPrimary = false,
-  }) async {
-    final template = ShiftRotationTemplate.findById(templateId);
-    if (template == null) {
-      throw ArgumentError('Unknown rotation template: $templateId');
-    }
-
-    await addRotation(
-      name: name.trim(),
-      groupCount: template.groupCount,
-      slotNames: template.slotNames,
-      cycleCount: template.cycleCount,
-      baseDate: baseDate,
-      isPrimary: isPrimary,
-    );
-  }
-
   /// 生成唯一 ID。
   String _generateId(String prefix) {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final random = Random().nextInt(10000);
     return '${prefix}_${timestamp}_$random';
   }
-
-  /// 默认班组颜色色板，按班组数量循环使用。
-  int _defaultGroupColor(int index) {
-    const colors = [
-      0xFF_90A4AE,
-      0xFF_7986CB,
-      0xFF_4DB6AC,
-      0xFF_FFC107,
-      0xFF_FF7043,
-      0xFF_BA68C8,
-    ];
-    return colors[index % colors.length];
-  }
-
-  /// 构建一个轮班，包含默认班组、状态和分配矩阵。
-  ShiftRotation _buildRotation({
-    required String name,
-    required int groupCount,
-    required List<String> slotNames,
-    required int cycleCount,
-    required DateTime baseDate,
-  }) {
-    final groups = List.generate(
-      groupCount,
-      (i) => ShiftGroup(
-        id: _generateId('group'),
-        name: '${i + 1}班',
-        colorValue: _defaultGroupColor(i),
-      ),
-    );
-
-    final slots = slotNames
-        .map((name) => ShiftSlot(name: name))
-        .toList();
-
-    final assignments = _buildDefaultAssignments(
-      groupCount: groupCount,
-      slotCount: slots.length,
-      cycleCount: cycleCount,
-    );
-
-    return ShiftRotation(
-      id: _generateId('rotation'),
-      name: name,
-      baseDate: baseDate,
-      cycleCount: cycleCount,
-      groups: groups,
-      slots: slots,
-      assignments: assignments,
-    );
-  }
-
-  /// 生成默认的周期分配矩阵。
-  ///
-  /// 每个班组在周期内的状态按 slot 下标循环偏移，保证每天各班组状态分布均匀。
-  List<List<int>> _buildDefaultAssignments({
-    required int groupCount,
-    required int slotCount,
-    required int cycleCount,
-  }) {
-    final cycleDays = groupCount * cycleCount;
-    return List.generate(groupCount, (groupIndex) {
-      return List.generate(cycleDays, (dayIndex) {
-        return (groupIndex + dayIndex) % slotCount;
-      });
-    });
-  }
-}
-
-/// 轮班模板，用于快速创建常见倒班形式。
-class ShiftRotationTemplate {
-  const ShiftRotationTemplate({
-    required this.id,
-    required this.displayName,
-    required this.groupCount,
-    required this.slotNames,
-    required this.cycleCount,
-  });
-
-  final String id;
-  final String displayName;
-  final int groupCount;
-  final List<String> slotNames;
-  final int cycleCount;
-
-  static const List<ShiftRotationTemplate> all = [
-    _fourTwoSingle,
-    _threeTwoSingle,
-    _fourThreeDouble,
-    _fiveThreeSingle,
-    _sixThreeSingle,
-  ];
-
-  static ShiftRotationTemplate? findById(String id) {
-    for (final template in all) {
-      if (template.id == id) return template;
-    }
-    return null;
-  }
-
-  static const _fourTwoSingle = ShiftRotationTemplate(
-    id: 'template_4_2_single',
-    displayName: '四班两倒单循环',
-    groupCount: 4,
-    slotNames: ['白班', '上夜班', '下夜班', '休息'],
-    cycleCount: 1,
-  );
-
-  static const _threeTwoSingle = ShiftRotationTemplate(
-    id: 'template_3_2_single',
-    displayName: '三班两倒单循环',
-    groupCount: 3,
-    slotNames: ['白班', '夜班', '休息'],
-    cycleCount: 1,
-  );
-
-  static const _fourThreeDouble = ShiftRotationTemplate(
-    id: 'template_4_3_double',
-    displayName: '四班三倒双循环',
-    groupCount: 4,
-    slotNames: ['早班', '中班', '晚班', '休息'],
-    cycleCount: 2,
-  );
-
-  static const _fiveThreeSingle = ShiftRotationTemplate(
-    id: 'template_5_3_single',
-    displayName: '五班三倒单循环',
-    groupCount: 5,
-    slotNames: ['早班', '中班', '晚班', '休息', '休息'],
-    cycleCount: 1,
-  );
-
-  static const _sixThreeSingle = ShiftRotationTemplate(
-    id: 'template_6_3_single',
-    displayName: '六班三倒单循环',
-    groupCount: 6,
-    slotNames: ['早班', '中班', '晚班', '休息', '休息', '休息'],
-    cycleCount: 1,
-  );
 }

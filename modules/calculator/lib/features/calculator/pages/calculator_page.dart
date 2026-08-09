@@ -42,21 +42,23 @@ class CalculatorPage extends ConsumerWidget {
     final currentType = config.currentType;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('多功能计算器'),
-        centerTitle: true,
-        leading: _buildTypeSelector(context, ref, currentType),
-        actions: [
-          AdaptiveIconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () => _openHistory(context),
-            tooltip: '计算历史',
-          ),
-        ],
-      ),
       body: Column(
         children: [
-          _buildTopControls(context, ref, currentType, config),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildTopControls(context, ref, currentType, config),
+                ),
+                AdaptiveIconButton(
+                  icon: const Icon(Icons.history),
+                  onPressed: () => _openHistory(context),
+                  tooltip: '计算历史',
+                ),
+              ],
+            ),
+          ),
           Expanded(
             child: _buildCalculatorBody(context, ref, currentType),
           ),
@@ -106,35 +108,39 @@ class CalculatorPage extends ConsumerWidget {
     CalculatorType currentType,
     CalculatorConfig config,
   ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: ScrollConfiguration(
-        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildTypeDropdown(context, ref, currentType),
-              if (currentType == CalculatorType.scientific) ...[
-                const SizedBox(width: 12),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '科学计数法',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    Switch(
-                      value: config.scientificNotation,
-                      onChanged: (value) {
-                        ref.read(calculatorConfigProvider).setScientificNotation(value);
-                      },
-                    ),
-                  ],
-                ),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildTypeDropdown(context, ref, currentType),
+                if (currentType == CalculatorType.scientific) ...[
+                  const SizedBox(width: 12),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '科学计数法',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      Switch(
+                        value: config.scientificNotation,
+                        onChanged: (value) {
+                          ref.read(calculatorConfigProvider).setScientificNotation(value);
+                        },
+                      ),
+                    ],
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -156,10 +162,12 @@ class CalculatorPage extends ConsumerWidget {
     CalculatorType currentType,
   ) {
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 180),
+      constraints: const BoxConstraints(maxWidth: 140),
       child: DropdownMenu<CalculatorType>(
+        width: 140,
         initialSelection: currentType,
         requestFocusOnTap: false,
+        expandedInsets: EdgeInsets.zero,
         label: const Text('计算器'),
         dropdownMenuEntries: CalculatorType.values.map((type) {
           return DropdownMenuEntry(

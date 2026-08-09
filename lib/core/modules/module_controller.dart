@@ -45,6 +45,26 @@ class ModuleController extends ChangeNotifier {
     return sorted.where((m) => isEnabled(m.definition.id)).toList();
   }
 
+  /// 横屏/双列布局下按 [displayOrderLandscape] 排序后的已启用模块。
+  ///
+  /// 未单独设置横屏顺序的模块回退到竖屏 [displayOrder]，保证首次切换横屏时
+  /// 顺序与竖屏一致。
+  List<ModuleContract> get enabledModulesLandscape {
+    final sorted = _registry.toList()
+      ..sort((a, b) {
+        final orderA = _landscapeOrder(a.definition.id);
+        final orderB = _landscapeOrder(b.definition.id);
+        return orderA.compareTo(orderB);
+      });
+    return sorted.where((m) => isEnabled(m.definition.id)).toList();
+  }
+
+  int _landscapeOrder(String moduleId) {
+    return _states[moduleId]?.displayOrderLandscape ??
+        _states[moduleId]?.displayOrder ??
+        0;
+  }
+
   /// 查询指定模块是否启用。
   bool isEnabled(String moduleId) {
     return _states[moduleId]?.enabled ?? false;
@@ -129,6 +149,33 @@ class ModuleController extends ChangeNotifier {
       final state = _states[enabled[i].definition.id];
       if (state != null) {
         state.displayOrder = i;
+      }
+    }
+
+    await _saveStates();
+    notifyListeners();
+  }
+
+  /// 按已启用模块列表中的索引重新排序（横屏/双列布局）。
+  ///
+  /// 仅更新各模块的 [ModuleState.displayOrderLandscape]，不影响竖屏顺序。
+  /// [oldIndex] 为拖拽起始索引，[newIndex] 为模块最终应处的目标位置索引。
+  Future<void> reorderEnabledModulesLandscape(
+    int oldIndex,
+    int newIndex,
+  ) async {
+    final enabled = enabledModulesLandscape.toList();
+    if (oldIndex < 0 || oldIndex >= enabled.length) return;
+    if (newIndex < 0 || newIndex > enabled.length) return;
+    if (oldIndex == newIndex) return;
+
+    final moved = enabled.removeAt(oldIndex);
+    enabled.insert(newIndex, moved);
+
+    for (var i = 0; i < enabled.length; i++) {
+      final state = _states[enabled[i].definition.id];
+      if (state != null) {
+        state.displayOrderLandscape = i;
       }
     }
 

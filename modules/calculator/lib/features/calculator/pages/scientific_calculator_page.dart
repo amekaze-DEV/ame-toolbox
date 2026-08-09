@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/calculator_config_provider.dart';
@@ -22,9 +23,11 @@ class _ScientificCalculatorPageState
     extends ConsumerState<ScientificCalculatorPage> {
   bool _secondFunction = false;
   final ScrollController _historyScrollController = ScrollController();
+  final FocusNode _focusNode = FocusNode();
 
   @override
   void dispose() {
+    _focusNode.dispose();
     _historyScrollController.dispose();
     super.dispose();
   }
@@ -37,66 +40,72 @@ class _ScientificCalculatorPageState
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollHistoryToBottom();
+      _focusNode.requestFocus();
     });
 
-    return Column(
-      children: [
-        // 上方：历史记录卷轴
-        Expanded(
-          child: _buildHistoryScroll(context, controller.history),
-        ),
-        // 下方：当前输入 / 结果
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              // 当前表达式或结果
-              Text(
-                controller.expression.isNotEmpty
-                    ? controller.expression
-                    : controller.result.display,
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      color: controller.result.isError &&
-                              controller.expression.isEmpty
-                          ? colorScheme.error
-                          : colorScheme.onSurface,
-                      fontWeight: FontWeight.w500,
-                    ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.right,
-              ),
-              const SizedBox(height: 4),
-              // 错误详情
-              if (controller.result.isError &&
-                  controller.result.errorMessage != null)
+    return KeyboardListener(
+      focusNode: _focusNode,
+      autofocus: true,
+      onKeyEvent: (event) => _onKeyEvent(controller, event),
+      child: Column(
+        children: [
+          // 上方：历史记录卷轴
+          Expanded(
+            child: _buildHistoryScroll(context, controller.history),
+          ),
+          // 下方：当前输入 / 结果
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // 当前表达式或结果
                 Text(
-                  controller.result.errorMessage!,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.error,
+                  controller.expression.isNotEmpty
+                      ? controller.expression
+                      : controller.result.display,
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        color: controller.result.isError &&
+                                controller.expression.isEmpty
+                            ? colorScheme.error
+                            : colorScheme.onSurface,
+                        fontWeight: FontWeight.w500,
                       ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.right,
                 ),
-            ],
+                const SizedBox(height: 4),
+                // 错误详情
+                if (controller.result.isError &&
+                    controller.result.errorMessage != null)
+                  Text(
+                    controller.result.errorMessage!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.error,
+                        ),
+                    textAlign: TextAlign.right,
+                  ),
+              ],
+            ),
           ),
-        ),
-        // 键盘
-        ScientificKeypad(
-          showFullKeyboard: config.showFullKeyboard,
-          degrees: controller.degrees,
-          secondFunction: _secondFunction,
-          onKeyPressed: (value) => _handleKeyPress(controller, value),
-          onToggleSecondFunction: () {
-            setState(() {
-              _secondFunction = !_secondFunction;
-            });
-          },
-          onToggleAngleMode: controller.toggleAngleMode,
-        ),
-      ],
+          // 键盘
+          ScientificKeypad(
+            showFullKeyboard: config.showFullKeyboard,
+            degrees: controller.degrees,
+            secondFunction: _secondFunction,
+            onKeyPressed: (value) => _handleKeyPress(controller, value),
+            onToggleSecondFunction: () {
+              setState(() {
+                _secondFunction = !_secondFunction;
+              });
+            },
+            onToggleAngleMode: controller.toggleAngleMode,
+          ),
+        ],
+      ),
     );
   }
 
@@ -107,12 +116,15 @@ class _ScientificCalculatorPageState
       return const SizedBox.shrink();
     }
 
+    // 配置中历史为"最新在前"，此处倒序展示，使最新计算结果显示在最下方。
+    final reversed = history.reversed.toList();
+
     return ListView.builder(
       controller: _historyScrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: history.length,
+      itemCount: reversed.length,
       itemBuilder: (context, index) {
-        final record = history[index];
+        final record = reversed[index];
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: InkWell(
@@ -160,6 +172,32 @@ class _ScientificCalculatorPageState
         break;
       default:
         controller.append(value);
+    }
+    _focusNode.requestFocus();
+  }
+
+  void _onKeyEvent(dynamic controller, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) return;
+
+    if (event.logicalKey == LogicalKeyboardKey.backspace) {
+      controller.backspace();
+      return;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.delete) {
+      controller.clear();
+      return;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.enter ||
+        event.logicalKey == LogicalKeyboardKey.numpadEnter ||
+        event.logicalKey == LogicalKeyboardKey.numpadEqual ||
+        event.logicalKey == LogicalKeyboardKey.equal) {
+      controller.calculate();
+      return;
+    }
+
+    final char = event.character;
+    if (char != null && RegExp(r'^[0-9+\-*/.()%^]$').hasMatch(char)) {
+      controller.append(char);
     }
   }
 }

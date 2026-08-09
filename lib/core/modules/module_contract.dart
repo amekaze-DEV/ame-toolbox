@@ -30,6 +30,23 @@ abstract class ModuleContract {
   /// 返回的 Widget 应自行管理状态，并遵循底座卡片视觉规范。
   List<Widget> buildDashboardWidgets(BuildContext context, WidgetRef ref) => const [];
 
+  /// 该模块是否提供自定义首页入口卡片（替换通用模块卡片）。
+  ///
+  /// 为 true 时，首页模块入口列表将使用 [buildEntryCard] 返回的自定义卡片，
+  /// 而不是通用的模块摘要卡片。默认返回 false。
+  bool get hasCustomEntryCard => false;
+
+  /// 模块在首页入口列表的自定义入口卡片（可选）。
+  ///
+  /// [onOpenModule] 用于在本卡片内触发进入模块主页（切换底座导航，保留导航栏）。
+  /// 返回 null 时，首页使用通用模块摘要卡片作为本模块入口。
+  Widget? buildEntryCard(
+    BuildContext context,
+    WidgetRef ref,
+    VoidCallback onOpenModule,
+  ) =>
+      null;
+
   /// 主页卡片摘要数据（显示在主页模块卡片上）。
   ///
   /// 同步返回，避免异步加载导致的卡片闪烁。

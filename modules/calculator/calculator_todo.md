@@ -13,8 +13,8 @@
 | **模块 ID** | `calculator` |
 | **模块名称** | 多功能计算器 |
 | **当前阶段** | Phase 6（模块契约接入与集成验证） |
-| **总体进度** | 93% |
-| **已完成任务数** | 40 / 43 |
+| **总体进度** | 95% |
+| **已完成任务数** | 41 / 43 |
 | **阻塞任务数** | 0 |
 | **下一里程碑** | M6 - 集成验收通过 |
 
@@ -483,12 +483,13 @@
   - 参考: `calculator_plan.md` §7
 
 ### P6-T2: 主项目注册
-- [ ] P6-T2: 主项目注册
+- [x] P6-T2: 主项目注册
   - 优先级: P0
   - 主导: DEV
   - 依赖: P6-T1
   - 预估工时: 0.5 天
-  - 状态: 待开始
+  - 状态: 已完成
+  - 实际结果: 主项目 `pubspec.yaml` 已添加 `calculator_module` 路径依赖；`lib/core/modules/module_registry.dart` 中 `calculator` 占位模块已替换为 `CalculatorModule()`；移除子项目独立调试临时组件（`lib/main.dart`、`lib/core/platform/fake_device_info_provider.dart`、`lib/core/storage/memory_storage_service.dart`）；修复 `calculator_module_test.dart` 图标名断言；`flutter analyze`、`flutter test`、`flutter build windows --debug` 均通过
   - 验收标准摘要: 替换 `lib/core/modules/module_registry.dart` 中 calculator 占位模块；主项目 `pubspec.yaml` 添加模块依赖
   - 参考: `calculator_plan.md` §7.1
 
@@ -552,13 +553,13 @@
 
 > 当前聚焦任务，用于快速查看与每日更新
 
-- [x] **Phase 6-T1 完成：独立运行验证**
+- [x] **Phase 6-T2 完成：主项目注册**
   - 优先级: P0
   - 状态: 已完成
   - 负责人: DEV
-  - 交付物: `flutter analyze` 0 问题、`flutter test` 276 通过 1 跳过、`flutter build windows --debug` 通过
-  - 前置条件: Phase 5 完成
-  - 下一步: 进入 P6-T2（主项目注册）
+  - 交付物: 主项目 `pubspec.yaml` 添加模块路径依赖、`lib/core/modules/module_registry.dart` 替换 `calculator` 占位模块、主项目 `flutter build windows --debug` 通过
+  - 前置条件: P6-T1 完成
+  - 下一步: 进入 P6-T3（集成测试）
 
 ---
 
@@ -593,7 +594,8 @@
 ## 10. 更新记录
 
 - **最后更新**: 2026-08-05
-- **更新说明**: Phase 6-T1 独立运行验证完成；`flutter analyze` 0 问题，`flutter test` 276 通过 1 跳过，`flutter build windows --debug` 成功生成 `calculator_module.exe`；项目状态进入 Phase 6（模块契约接入与集成验证），进度 40 / 43（93%）
+- **更新说明**: Phase 6-T2 主项目注册完成；主项目 `pubspec.yaml` 已添加 `calculator_module` 路径依赖，`lib/core/modules/module_registry.dart` 中 `calculator` 占位模块已替换为 `CalculatorModule()`；已移除子项目独立调试临时组件（`lib/main.dart`、`lib/core/platform/fake_device_info_provider.dart`、`lib/core/storage/memory_storage_service.dart`），后续纳入主线调试；修复 `calculator_module_test.dart` 图标名断言为 `calculator`；子项目 `flutter analyze` 0 问题、`flutter test` 276 通过 1 跳过、主项目 `flutter build windows --debug` 成功生成 `ametoolbox.exe`
+- **2026-08-05**: Phase 6-T1 独立运行验证完成；`flutter analyze` 0 问题，`flutter test` 276 通过 1 跳过，`flutter build windows --debug` 成功生成 `calculator_module.exe`；项目状态进入 Phase 6（模块契约接入与集成验证），进度 40 / 43（93%）
 - **2026-08-05**: Phase 5（P5-T1 ~ P5-T8）全部完成；实现模块主页框架、横竖屏布局、历史面板、模块设置页、首页快速计算器/历史卡片、`CalculatorModule` 契约更新与键盘显示开关联动；修复 `summary` 默认返回值与新增测试断言不一致的问题；`flutter analyze` 0 问题，`flutter test` 276 通过 1 跳过（行覆盖率 ≥80%）
 - **2026-08-03**: Phase 4（P4-T1 ~ P4-T6）全部完成；修复 `ExchangeRateController` 无缓存时无法立即换算的问题（新增 `didInitialize` 自动刷新）；修复 `RadixConverterController` 位运算测试与默认十进制进制的对齐问题（切换进制时自动转换操作数值）；`flutter analyze` 0 问题，`flutter test` 237 通过 1 跳过，行覆盖率 82.99%（≥80%）
 - **2026-08-01**: Phase 3（P3-T1 ~ P3-T8）全部完成并通过 `flutter analyze` / `flutter test` 验证；修正控制器测试中断言类型（字符串结果误用 `closeTo` 数值比较）

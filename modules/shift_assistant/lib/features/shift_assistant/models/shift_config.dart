@@ -1,3 +1,5 @@
+import 'dart:math';
+
 /// 倒班助手模块配置。
 ///
 /// 保存轮班列表、主要轮班、节假日缓存等。
@@ -27,7 +29,7 @@ class ShiftConfig {
       id: 'rotation_default',
       name: '我的轮班',
       baseDate: _defaultBaseDate,
-      cycleCount: 1,
+      cycleDays: 4,
       groups: const [
         ShiftGroup(id: 'group_1', name: '一班', colorValue: 0xFF_90A4AE),
         ShiftGroup(id: 'group_2', name: '二班', colorValue: 0xFF_7986CB),
@@ -145,8 +147,10 @@ class ShiftRotation {
   /// 周期起始日期。
   final DateTime baseDate;
 
-  /// 循环数；周期天数 = 班组数量 × 循环数。
-  final int cycleCount;
+  /// 循环周期天数，范围 1~30。
+  ///
+  /// 表示一个完整轮班周期包含的天数，决定 [assignments] 每行的列数。
+  final int cycleDays;
 
   /// 班组列表。
   final List<ShiftGroup> groups;
@@ -156,7 +160,7 @@ class ShiftRotation {
 
   /// 周期状态分配矩阵。
   ///
-  /// 外层索引对应 [groups] 的下标，内层索引对应周期内的第几天，
+  /// 外层索引对应 [groups] 的下标，内层索引对应周期内的第几天（0~cycleDays-1），
   /// 值为 [slots] 的下标。
   final List<List<int>> assignments;
 
@@ -167,15 +171,17 @@ class ShiftRotation {
     required this.id,
     required this.name,
     required this.baseDate,
-    required this.cycleCount,
+    required this.cycleDays,
     required this.groups,
     required this.slots,
     required this.assignments,
     this.isPrimary = false,
   });
 
-  /// 周期天数。
-  int get cycleDays => groups.length * cycleCount;
+  static const int minCycleDays = 1;
+  static const int maxCycleDays = 30;
+  static const int minGroupCount = 1;
+  static const int maxGroupCount = 8;
 
   /// 获取指定班组在周期内指定日期的状态下标。
   ///
@@ -196,7 +202,7 @@ class ShiftRotation {
     String? id,
     String? name,
     DateTime? baseDate,
-    int? cycleCount,
+    int? cycleDays,
     List<ShiftGroup>? groups,
     List<ShiftSlot>? slots,
     List<List<int>>? assignments,
@@ -206,7 +212,7 @@ class ShiftRotation {
         id: id ?? this.id,
         name: name ?? this.name,
         baseDate: baseDate ?? this.baseDate,
-        cycleCount: cycleCount ?? this.cycleCount,
+        cycleDays: cycleDays ?? this.cycleDays,
         groups: groups ?? this.groups,
         slots: slots ?? this.slots,
         assignments: assignments ?? this.assignments,
@@ -217,29 +223,37 @@ class ShiftRotation {
         'id': id,
         'name': name,
         'baseDate': baseDate.toIso8601String(),
-        'cycleCount': cycleCount,
+        'cycleDays': cycleDays,
         'groups': groups.map((e) => e.toJson()).toList(),
         'slots': slots.map((e) => e.toJson()).toList(),
         'assignments': assignments,
         'isPrimary': isPrimary,
       };
 
-  factory ShiftRotation.fromJson(Map<String, dynamic> json) => ShiftRotation(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        baseDate: DateTime.parse(json['baseDate'] as String),
-        cycleCount: json['cycleCount'] as int,
-        groups: (json['groups'] as List<dynamic>)
-            .map((e) => ShiftGroup.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        slots: (json['slots'] as List<dynamic>)
-            .map((e) => ShiftSlot.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        assignments: (json['assignments'] as List<dynamic>)
-            .map((row) => (row as List<dynamic>).cast<int>())
-            .toList(),
-        isPrimary: json['isPrimary'] as bool? ?? false,
-      );
+  factory ShiftRotation.fromJson(Map<String, dynamic> json) {
+    final groups = (json['groups'] as List<dynamic>)
+        .map((e) => ShiftGroup.fromJson(e as Map<String, dynamic>))
+        .toList();
+
+    // 兼容旧数据：旧版本使用 cycleCount，周期天数 = groupCount * cycleCount。
+    final cycleDays = json['cycleDays'] as int? ??
+        (json['cycleCount'] as int? ?? 1) * max(groups.length, 1);
+
+    return ShiftRotation(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      baseDate: DateTime.parse(json['baseDate'] as String),
+      cycleDays: cycleDays,
+      groups: groups,
+      slots: (json['slots'] as List<dynamic>)
+          .map((e) => ShiftSlot.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      assignments: (json['assignments'] as List<dynamic>)
+          .map((row) => (row as List<dynamic>).cast<int>())
+          .toList(),
+      isPrimary: json['isPrimary'] as bool? ?? false,
+    );
+  }
 }
 
 /// 单个班组定义。

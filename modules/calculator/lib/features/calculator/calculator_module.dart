@@ -11,7 +11,6 @@ import 'models/calculator_config.dart';
 import 'pages/calculator_page.dart';
 import 'pages/calculator_settings_page.dart';
 import 'providers/calculator_config_controller.dart';
-import 'widgets/calculator_dashboard_history_card.dart';
 import 'widgets/calculator_dashboard_quick_calc_card.dart';
 
 /// 多功能计算器模块。
@@ -33,7 +32,7 @@ class CalculatorModule implements ModuleContract {
         id: 'calculator',
         name: '多功能计算器',
         description: '表达式计算、单位换算、几何与汇率计算',
-        iconName: 'calculate',
+        iconName: 'calculator',
         defaultEnabled: true,
       );
 
@@ -49,23 +48,21 @@ class CalculatorModule implements ModuleContract {
 
   @override
   List<Widget> buildDashboardWidgets(BuildContext context, WidgetRef ref) {
-    final config = _configController?.config ?? CalculatorConfig.defaults;
-    final widgets = <Widget>[];
+    return const [];
+  }
 
-    if (config.dashboardQuickCalc) {
-      widgets.add(const CalculatorDashboardQuickCalcCard());
-    }
-    if (config.dashboardHistory) {
-      widgets.add(const CalculatorDashboardHistoryCard());
-    }
+  @override
+  bool get hasCustomEntryCard =>
+      _configController?.config.dashboardQuickCalc ?? true;
 
-    // 按配置顺序排序；两个卡片时，order 小的在前。
-    if (widgets.length == 2) {
-      if (config.dashboardQuickCalcOrder > config.dashboardHistoryOrder) {
-        return widgets.reversed.toList();
-      }
-    }
-    return widgets;
+  @override
+  Widget? buildEntryCard(
+    BuildContext context,
+    WidgetRef ref,
+    VoidCallback onOpenModule,
+  ) {
+    if (!(_configController?.config.dashboardQuickCalc ?? true)) return null;
+    return CalculatorDashboardQuickCalcCard(onOpenModule: onOpenModule);
   }
 
   @override

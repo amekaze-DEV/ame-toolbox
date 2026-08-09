@@ -6,6 +6,8 @@ import 'package:ametoolbox/core/models/module_definition.dart';
 import 'package:ametoolbox/core/models/module_summary.dart';
 import 'package:ametoolbox/core/modules/module_contract.dart';
 import 'package:ametoolbox/core/storage/storage_service.dart';
+import 'package:calculator_module/features/calculator/calculator_module.dart';
+import 'package:shift_assistant_module/features/shift_assistant/shift_assistant_module.dart';
 
 /// 模块注册表——底座启动时扫描并注册所有模块。
 ///
@@ -14,12 +16,15 @@ class ModuleRegistry {
   const ModuleRegistry._();
 
   /// 注册所有内置模块。
-  ///
-  /// 当前为五个预设子项目的占位实现；子项目开发完成后替换为真实模块。
   static List<ModuleContract> registerAll() {
-    return AppConstants.defaultModules
-        .map((module) => _PlaceholderModule(definition: _toDefinition(module)))
-        .toList();
+    return AppConstants.defaultModules.map((module) {
+      final definition = _toDefinition(module);
+      return switch (module.id) {
+        'calculator' => CalculatorModule(),
+        'shift_assistant' => ShiftAssistantModule(),
+        _ => _PlaceholderModule(definition: definition),
+      };
+    }).toList();
   }
 
   static ModuleDefinition _toDefinition(
@@ -58,6 +63,17 @@ class _PlaceholderModule implements ModuleContract {
   @override
   List<Widget> buildDashboardWidgets(BuildContext context, WidgetRef ref) =>
       const [];
+
+  @override
+  bool get hasCustomEntryCard => false;
+
+  @override
+  Widget? buildEntryCard(
+    BuildContext context,
+    WidgetRef ref,
+    VoidCallback onOpenModule,
+  ) =>
+      null;
 
   @override
   ModuleSummary get summary => ModuleSummary(

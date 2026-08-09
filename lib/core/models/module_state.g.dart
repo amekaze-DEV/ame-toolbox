@@ -20,19 +20,22 @@ class ModuleStateAdapter extends TypeAdapter<ModuleState> {
       moduleId: fields[0] as String,
       enabled: fields[1] == null ? true : fields[1] as bool,
       displayOrder: fields[2] == null ? 0 : fields[2] as int,
+      displayOrderLandscape: fields[3] as int?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ModuleState obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.moduleId)
       ..writeByte(1)
       ..write(obj.enabled)
       ..writeByte(2)
-      ..write(obj.displayOrder);
+      ..write(obj.displayOrder)
+      ..writeByte(3)
+      ..write(obj.displayOrderLandscape);
   }
 
   @override

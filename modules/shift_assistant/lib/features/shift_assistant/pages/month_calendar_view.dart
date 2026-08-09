@@ -20,10 +20,10 @@ import 'shift_assistant_settings_page.dart';
 /// 每个单元格显示日期及当天承担该状态的班组名称。窄宽度时每周块可横向滚动。
 class MonthCalendarView extends ConsumerWidget {
   /// 单个日期单元格的最小宽度；7 列 + 标签列总宽低于此值时启用横向滚动。
-  static const double _minDayCellWidth = 64;
+  static const double _minDayCellWidth = 48;
 
   /// 左侧状态标签列宽度。
-  static const double _shiftLabelWidth = 56;
+  static const double _shiftLabelWidth = 48;
 
   const MonthCalendarView({super.key});
 

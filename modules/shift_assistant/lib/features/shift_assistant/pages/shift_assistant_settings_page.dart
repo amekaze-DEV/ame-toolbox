@@ -63,14 +63,21 @@ class ShiftAssistantSettingsPage extends ConsumerWidget {
     BuildContext context,
     ShiftConfigController notifier,
   ) async {
-    final result = await showDialog<_RotationFormResult>(
+    final result = await showDialog<_RotationConfigResult>(
       context: context,
-      builder: (context) => const _RotationFormDialog(),
+      builder: (context) => const _RotationConfigDialog(
+        title: '添加轮班',
+        showPrimaryOption: true,
+      ),
     );
     if (result == null) return;
-    await notifier.addRotationFromTemplate(
-      templateId: result.templateId,
+    await notifier.addRotation(
       name: result.name,
+      baseDate: result.baseDate,
+      cycleDays: result.cycleDays,
+      groups: result.groups,
+      slots: result.slots,
+      assignments: result.assignments,
       isPrimary: result.isPrimary,
     );
   }
@@ -80,16 +87,19 @@ class ShiftAssistantSettingsPage extends ConsumerWidget {
     ShiftConfigController notifier,
     ShiftRotation rotation,
   ) async {
-    final result = await showDialog<_RotationEditResult>(
+    final result = await showDialog<_RotationConfigResult>(
       context: context,
-      builder: (context) => _RotationEditDialog(rotation: rotation),
+      builder: (context) => _RotationConfigDialog(
+        title: '编辑轮班',
+        initialRotation: rotation,
+      ),
     );
     if (result == null) return;
 
-    var updated = rotation.copyWith(
+    final updated = rotation.copyWith(
       name: result.name,
       baseDate: result.baseDate,
-      cycleCount: result.cycleCount,
+      cycleDays: result.cycleDays,
       groups: result.groups,
       slots: result.slots,
       assignments: result.assignments,
@@ -169,7 +179,7 @@ class _RotationList extends StatelessWidget {
             title: Text(rotation.name),
             subtitle: Text(
               '${rotation.groups.length}个班组 · ${rotation.slots.length}种状态 · '
-              '${rotation.cycleCount}循环 · ${rotation.cycleDays}天周期',
+              '${rotation.cycleDays}天周期',
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -272,179 +282,136 @@ class _EmptyHint extends StatelessWidget {
   }
 }
 
-/// 添加轮班表单结果。
-class _RotationFormResult {
-  const _RotationFormResult({
-    required this.templateId,
-    required this.name,
-    required this.isPrimary,
-  });
-
-  final String templateId;
-  final String name;
-  final bool isPrimary;
-}
-
-/// 添加轮班对话框。
-class _RotationFormDialog extends StatefulWidget {
-  const _RotationFormDialog();
-
-  @override
-  State<_RotationFormDialog> createState() => _RotationFormDialogState();
-}
-
-class _RotationFormDialogState extends State<_RotationFormDialog> {
-  late final TextEditingController _nameController;
-  late String _templateId;
-  bool _isPrimary = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController();
-    _templateId = ShiftRotationTemplate.all.first.id;
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final templates = ShiftRotationTemplate.all;
-
-    return AlertDialog(
-      title: const Text('添加轮班'),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: 280),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: '轮班名称',
-                border: OutlineInputBorder(),
-              ),
-              autofocus: true,
-              maxLines: 1,
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              initialValue: _templateId,
-              decoration: const InputDecoration(
-                labelText: '选择模板',
-                border: OutlineInputBorder(),
-              ),
-              items: templates.map((template) {
-                return DropdownMenuItem(
-                  value: template.id,
-                  child: Text(template.displayName),
-                );
-              }).toList(),
-              onChanged: (value) {
-                if (value != null) setState(() => _templateId = value);
-              },
-            ),
-            const SizedBox(height: 8),
-            CheckboxListTile(
-              value: _isPrimary,
-              onChanged: (value) {
-                setState(() => _isPrimary = value ?? false);
-              },
-              title: const Text('设为主要轮班'),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        AdaptiveButton(
-          onPressed: () => Navigator.of(context).pop(),
-          label: '取消',
-          variant: AdaptiveButtonVariant.text,
-        ),
-        AdaptiveButton(
-          onPressed: _nameController.text.trim().isEmpty
-              ? null
-              : () => Navigator.of(context).pop(
-                    _RotationFormResult(
-                      templateId: _templateId,
-                      name: _nameController.text.trim(),
-                      isPrimary: _isPrimary,
-                    ),
-                  ),
-          label: '保存',
-          variant: AdaptiveButtonVariant.text,
-        ),
-      ],
-    );
-  }
-}
-
-/// 编辑轮班结果。
-class _RotationEditResult {
-  const _RotationEditResult({
+/// 添加 / 编辑轮班对话框的统一结果。
+class _RotationConfigResult {
+  const _RotationConfigResult({
     required this.name,
     required this.baseDate,
-    required this.cycleCount,
+    required this.cycleDays,
     required this.groups,
     required this.slots,
     required this.assignments,
+    this.isPrimary = false,
   });
 
   final String name;
   final DateTime baseDate;
-  final int cycleCount;
+  final int cycleDays;
   final List<ShiftGroup> groups;
   final List<ShiftSlot> slots;
   final List<List<int>> assignments;
+  final bool isPrimary;
 }
 
-/// 编辑轮班对话框。
-class _RotationEditDialog extends StatefulWidget {
-  const _RotationEditDialog({required this.rotation});
+/// 添加 / 编辑轮班统一对话框。
+///
+/// 在添加与编辑时均可完整设置：轮班名称、起始日期、循环周期天数、
+/// 班组（可增删、改名）、轮班状态（可增删、改名）以及周期安排矩阵，
+/// 保证两种场景功能一致。
+class _RotationConfigDialog extends StatefulWidget {
+  const _RotationConfigDialog({
+    required this.title,
+    this.initialRotation,
+    this.showPrimaryOption = false,
+  });
 
-  final ShiftRotation rotation;
+  final String title;
+  final ShiftRotation? initialRotation;
+  final bool showPrimaryOption;
 
   @override
-  State<_RotationEditDialog> createState() => _RotationEditDialogState();
+  State<_RotationConfigDialog> createState() => _RotationConfigDialogState();
 }
 
-class _RotationEditDialogState extends State<_RotationEditDialog> {
+class _RotationConfigDialogState extends State<_RotationConfigDialog> {
   late final TextEditingController _nameController;
+  late final List<TextEditingController> _groupControllers;
+  late final List<TextEditingController> _slotControllers;
+  late final List<String> _groupIds;
   late DateTime _baseDate;
-  late int _cycleCount;
-  late List<ShiftGroup> _groups;
-  late List<ShiftSlot> _slots;
+  late int _cycleDays;
   late List<List<int>> _assignments;
+  bool _isPrimary = false;
+  int _groupSeq = 0;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.rotation.name);
-    _baseDate = widget.rotation.baseDate;
-    _cycleCount = widget.rotation.cycleCount;
-    _groups = List.of(widget.rotation.groups);
-    _slots = List.of(widget.rotation.slots);
-    _assignments = widget.rotation.assignments
-        .map((row) => List<int>.of(row))
-        .toList();
+    final rotation = widget.initialRotation;
+
+    _nameController = TextEditingController(text: rotation?.name ?? '我的轮班');
+    _baseDate = rotation?.baseDate ?? dateOnly(DateTime.now());
+    _cycleDays = rotation?.cycleDays ?? 4;
+
+    if (rotation != null) {
+      _groupControllers = rotation.groups
+          .map((g) => TextEditingController(text: g.name))
+          .toList();
+      _groupIds = rotation.groups.map((g) => g.id).toList();
+      _slotControllers = rotation.slots
+          .map((s) => TextEditingController(text: s.name))
+          .toList();
+      _assignments = rotation.assignments
+          .map((row) => List<int>.of(row))
+          .toList();
+      _isPrimary = rotation.isPrimary;
+      _groupSeq = rotation.groups.length;
+    } else {
+      _groupControllers =
+          List.generate(4, (i) => TextEditingController(text: '${i + 1}班'));
+      _groupIds = List.generate(4, _newGroupKey);
+      _slotControllers = [
+        TextEditingController(text: '白班'),
+        TextEditingController(text: '夜班'),
+        TextEditingController(text: '休息'),
+      ];
+      _assignments = List.generate(
+        4,
+        (g) => List.generate(_cycleDays, (d) => (g + d) % 3),
+      );
+    }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    for (final c in _groupControllers) {
+      c.dispose();
+    }
+    for (final c in _slotControllers) {
+      c.dispose();
+    }
     super.dispose();
   }
 
+  String _newGroupKey([int? index]) {
+    final seq = index ?? _groupSeq++;
+    return 'group_${DateTime.now().millisecondsSinceEpoch}_$seq';
+  }
+
+  List<ShiftGroup> get _groups => List.generate(
+        _groupControllers.length,
+        (i) => ShiftGroup(
+          id: _groupIds[i],
+          name: _groupControllers[i].text.trim(),
+        ),
+      );
+
+  List<ShiftSlot> get _slots => List.generate(
+        _slotControllers.length,
+        (i) => ShiftSlot(name: _slotControllers[i].text.trim()),
+      );
+
+  bool get _canSave =>
+      _nameController.text.trim().isNotEmpty &&
+      _slotControllers.any((c) => c.text.trim().isNotEmpty);
+
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return AlertDialog(
-      title: const Text('编辑轮班'),
+      title: Text(widget.title),
       content: ConstrainedBox(
         constraints: const BoxConstraints(minWidth: 320, maxWidth: 600),
         child: SingleChildScrollView(
@@ -463,28 +430,34 @@ class _RotationEditDialogState extends State<_RotationEditDialog> {
               const SizedBox(height: 16),
               _buildDatePicker(),
               const SizedBox(height: 16),
-              _buildCycleCountEditor(),
+              _buildCycleDaysEditor(),
               const SizedBox(height: 24),
-              Text(
-                '班组名称',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
+              Text('班组名称', style: textTheme.titleSmall),
               const SizedBox(height: 8),
               _buildGroupEditors(),
               const SizedBox(height: 24),
-              Text(
-                '轮班状态',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
+              Text('轮班状态', style: textTheme.titleSmall),
               const SizedBox(height: 8),
               _buildSlotEditors(),
               const SizedBox(height: 24),
               Text(
                 '周期安排（行=班组，列=周期内第几天）',
-                style: Theme.of(context).textTheme.titleSmall,
+                style: textTheme.titleSmall,
               ),
               const SizedBox(height: 8),
               _buildAssignmentMatrix(),
+              if (widget.showPrimaryOption) ...[
+                const SizedBox(height: 8),
+                CheckboxListTile(
+                  value: _isPrimary,
+                  onChanged: (value) => setState(() {
+                    _isPrimary = value ?? false;
+                  }),
+                  title: const Text('设为主要轮班'),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ],
             ],
           ),
         ),
@@ -496,7 +469,7 @@ class _RotationEditDialogState extends State<_RotationEditDialog> {
           variant: AdaptiveButtonVariant.text,
         ),
         AdaptiveButton(
-          onPressed: _nameController.text.trim().isEmpty ? null : _save,
+          onPressed: _canSave ? _save : null,
           label: '保存',
           variant: AdaptiveButtonVariant.text,
         ),
@@ -519,101 +492,190 @@ class _RotationEditDialogState extends State<_RotationEditDialog> {
       },
       child: InputDecorator(
         decoration: const InputDecoration(
-          labelText: '周期起始日期',
+          labelText: '轮班起始日期',
           border: OutlineInputBorder(),
         ),
-        child: Text('${_baseDate.year}-${_two(_baseDate.month)}-${_two(_baseDate.day)}'),
+        child: Text(
+          '${_baseDate.year}-${_two(_baseDate.month)}-${_two(_baseDate.day)}',
+        ),
       ),
     );
   }
 
-  Widget _buildCycleCountEditor() {
+  Widget _buildCycleDaysEditor() {
     return Row(
       children: [
-        Text('循环数：', style: Theme.of(context).textTheme.bodyMedium),
+        Text('循环周期天数：', style: Theme.of(context).textTheme.bodyMedium),
         IconButton(
-          onPressed: _cycleCount > 1
-              ? () => _updateCycleCount(_cycleCount - 1)
+          onPressed: _cycleDays > ShiftRotation.minCycleDays
+              ? () => _updateCycleDays(_cycleDays - 1)
               : null,
           icon: const Icon(Icons.remove),
         ),
-        Text('$_cycleCount'),
+        Text('$_cycleDays'),
         IconButton(
-          onPressed: () => _updateCycleCount(_cycleCount + 1),
+          onPressed: _cycleDays < ShiftRotation.maxCycleDays
+              ? () => _updateCycleDays(_cycleDays + 1)
+              : null,
           icon: const Icon(Icons.add),
         ),
       ],
     );
   }
 
-  void _updateCycleCount(int value) {
-    if (value < 1 || value == _cycleCount) return;
-    setState(() {
-      _cycleCount = value;
-      _resizeAssignments();
-    });
-  }
+  void _updateCycleDays(int value) {
+    final newDays = value.clamp(
+      ShiftRotation.minCycleDays,
+      ShiftRotation.maxCycleDays,
+    );
+    if (newDays == _cycleDays) return;
 
-  /// 根据当前班组数和循环数调整分配矩阵长度，新增列按原周期重复填充。
-  void _resizeAssignments() {
-    final newLength = _groups.length * _cycleCount;
-    for (var i = 0; i < _assignments.length; i++) {
-      final oldRow = _assignments[i];
-      _assignments[i] = List<int>.generate(
-        newLength,
-        (dayIndex) => dayIndex < oldRow.length
-            ? oldRow[dayIndex]
-            : oldRow[dayIndex % oldRow.length],
-      );
-    }
+    setState(() {
+      _cycleDays = newDays;
+      for (var i = 0; i < _assignments.length; i++) {
+        final oldRow = _assignments[i];
+        _assignments[i] = List<int>.generate(
+          _cycleDays,
+          (dayIndex) => dayIndex < oldRow.length
+              ? oldRow[dayIndex]
+              : oldRow[dayIndex % oldRow.length],
+        );
+      }
+    });
   }
 
   Widget _buildGroupEditors() {
     return Column(
       children: [
-        for (var i = 0; i < _groups.length; i++)
+        for (var i = 0; i < _groupControllers.length; i++)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: TextField(
-              decoration: InputDecoration(
-                labelText: '班组 ${i + 1}',
-                border: const OutlineInputBorder(),
-              ),
-              controller: TextEditingController(text: _groups[i].name),
-              onChanged: (value) {
-                _groups[i] = _groups[i].copyWith(name: value);
-              },
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _groupControllers[i],
+                    decoration: InputDecoration(
+                      labelText: '班组 ${i + 1}',
+                      border: const OutlineInputBorder(),
+                    ),
+                    maxLines: 1,
+                  ),
+                ),
+                if (_groupControllers.length > 1)
+                  AdaptiveIconButton(
+                    icon: const Icon(Icons.remove_circle_outline),
+                    tooltip: '删除班组',
+                    onPressed: () => _removeGroup(i),
+                  ),
+              ],
             ),
           ),
+        AdaptiveButton(
+          onPressed: _groupControllers.length < ShiftRotation.maxGroupCount
+              ? _addGroup
+              : null,
+          label: '添加班组',
+          variant: AdaptiveButtonVariant.text,
+        ),
       ],
     );
+  }
+
+  void _addGroup() {
+    if (_groupControllers.length >= ShiftRotation.maxGroupCount) return;
+    final index = _groupControllers.length;
+
+    setState(() {
+      _groupControllers.add(TextEditingController(text: '${index + 1}班'));
+      _groupIds.add(_newGroupKey());
+      _assignments.add(
+        List.generate(
+          _cycleDays,
+          (dayIndex) => (index + dayIndex) % _slotControllers.length,
+        ),
+      );
+    });
+  }
+
+  void _removeGroup(int index) {
+    if (_groupControllers.length <= ShiftRotation.minGroupCount ||
+        index < 0 ||
+        index >= _groupControllers.length) {
+      return;
+    }
+
+    setState(() {
+      _groupControllers.removeAt(index).dispose();
+      _groupIds.removeAt(index);
+      _assignments.removeAt(index);
+    });
   }
 
   Widget _buildSlotEditors() {
     return Column(
       children: [
-        for (var i = 0; i < _slots.length; i++)
+        for (var i = 0; i < _slotControllers.length; i++)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: TextField(
-              decoration: InputDecoration(
-                labelText: '状态 ${i + 1}',
-                border: const OutlineInputBorder(),
-              ),
-              controller: TextEditingController(text: _slots[i].name),
-              onChanged: (value) {
-                _slots[i] = _slots[i].copyWith(name: value);
-              },
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _slotControllers[i],
+                    decoration: InputDecoration(
+                      labelText: '状态 ${i + 1}',
+                      border: const OutlineInputBorder(),
+                    ),
+                    maxLines: 1,
+                  ),
+                ),
+                if (_slotControllers.length > 1)
+                  AdaptiveIconButton(
+                    icon: const Icon(Icons.remove_circle_outline),
+                    tooltip: '删除状态',
+                    onPressed: () => _removeSlot(i),
+                  ),
+              ],
             ),
           ),
+        AdaptiveButton(
+          onPressed: _addSlot,
+          label: '添加状态',
+          variant: AdaptiveButtonVariant.text,
+        ),
       ],
     );
   }
 
+  void _addSlot() {
+    setState(() => _slotControllers.add(TextEditingController(text: '')));
+  }
+
+  void _removeSlot(int index) {
+    if (_slotControllers.length <= 1 ||
+        index < 0 ||
+        index >= _slotControllers.length) {
+      return;
+    }
+
+    setState(() {
+      _slotControllers.removeAt(index).dispose();
+      // 同步分配矩阵：被删除状态引用归零，大于该索引的引用前移。
+      for (var groupIndex = 0; groupIndex < _assignments.length; groupIndex++) {
+        _assignments[groupIndex] = _assignments[groupIndex].map((slotIndex) {
+          if (slotIndex == index) return 0;
+          if (slotIndex > index) return slotIndex - 1;
+          return slotIndex;
+        }).toList();
+      }
+    });
+  }
+
   Widget _buildAssignmentMatrix() {
-    final cycleDays = _groups.length * _cycleCount;
     const dayCellWidth = 64.0;
     const labelWidth = 72.0;
+    final slotNames = _slotControllers.map((c) => c.text.trim()).toList();
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -624,7 +686,7 @@ class _RotationEditDialogState extends State<_RotationEditDialog> {
           Row(
             children: [
               const SizedBox(width: labelWidth),
-              for (var day = 0; day < cycleDays; day++)
+              for (var day = 0; day < _cycleDays; day++)
                 SizedBox(
                   width: dayCellWidth,
                   child: Text(
@@ -636,19 +698,20 @@ class _RotationEditDialogState extends State<_RotationEditDialog> {
             ],
           ),
           // 每行：班组 + 每天的状态下拉
-          for (var groupIndex = 0; groupIndex < _groups.length; groupIndex++)
+          for (var groupIndex = 0; groupIndex < _groupControllers.length;
+              groupIndex++)
             Row(
               children: [
                 SizedBox(
                   width: labelWidth,
                   child: Text(
-                    _groups[groupIndex].name,
+                    _groupControllers[groupIndex].text,
                     style: Theme.of(context).textTheme.labelSmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                for (var dayIndex = 0; dayIndex < cycleDays; dayIndex++)
+                for (var dayIndex = 0; dayIndex < _cycleDays; dayIndex++)
                   SizedBox(
                     width: dayCellWidth,
                     child: DropdownButtonFormField<int>(
@@ -659,11 +722,11 @@ class _RotationEditDialogState extends State<_RotationEditDialog> {
                         border: InputBorder.none,
                       ),
                       initialValue: _assignments[groupIndex][dayIndex],
-                      items: List.generate(_slots.length, (slotIndex) {
+                      items: List.generate(slotNames.length, (slotIndex) {
                         return DropdownMenuItem(
                           value: slotIndex,
                           child: Text(
-                            _slots[slotIndex].name,
+                            slotNames[slotIndex],
                             style: const TextStyle(fontSize: 12),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -687,13 +750,14 @@ class _RotationEditDialogState extends State<_RotationEditDialog> {
 
   void _save() {
     Navigator.of(context).pop(
-      _RotationEditResult(
+      _RotationConfigResult(
         name: _nameController.text.trim(),
         baseDate: _baseDate,
-        cycleCount: _cycleCount,
+        cycleDays: _cycleDays,
         groups: _groups,
         slots: _slots,
         assignments: _assignments,
+        isPrimary: _isPrimary,
       ),
     );
   }

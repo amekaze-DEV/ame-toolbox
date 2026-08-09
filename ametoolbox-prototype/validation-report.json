@@ -8,7 +8,7 @@
     "name": "solo-design",
     "version": "2026.07.22.00.00.00",
     "version_source": "skill-release-manifest.json",
-    "runtime_skill_dir": "c:\\Users\\amekaze\\.trae-cn\\builtin\\design\\hebe\\skills\\solo-design",
+    "runtime_skill_dir": "c:\\Users\\amekaze\\.trae-cn\\builtin\\design\\default\\skills\\solo-design",
     "recorded_at": null,
     "expected_version": "2026.07.22.00.00.00",
     "status": "manifest_fallback",
@@ -17,12 +17,13 @@
   },
   "operatingMode": "free-explore",
   "renderBlockingErrorCount": 0,
-  "softWarningCount": 34,
+  "softWarningCount": 37,
   "renderBlockingErrors": [],
   "errorSignatures": [],
   "softWarnings": [
     "[html-head-style] checklist.html: found 3 custom <style> block(s) in <head>. The <head> is owned by apply-html-head-contract.mjs; move custom styles before </body> or re-run apply-html-head-contract.mjs <css-path> <html-file> --replace-head to relocate them.",
     "[html-head-style] counter.html: found 1 custom <style> block(s) in <head>. The <head> is owned by apply-html-head-contract.mjs; move custom styles before </body> or re-run apply-html-head-contract.mjs <css-path> <html-file> --replace-head to relocate them.",
+    "[html-head-style] geometry-calculator-compact.html: found 1 custom <style> block(s) in <head>. The <head> is owned by apply-html-head-contract.mjs; move custom styles before </body> or re-run apply-html-head-contract.mjs <css-path> <html-file> --replace-head to relocate them.",
     "[html-head-style] home-landscape.html: found 1 custom <style> block(s) in <head>. The <head> is owned by apply-html-head-contract.mjs; move custom styles before </body> or re-run apply-html-head-contract.mjs <css-path> <html-file> --replace-head to relocate them.",
     "[html-head-style] home-portrait.html: found 1 custom <style> block(s) in <head>. The <head> is owned by apply-html-head-contract.mjs; move custom styles before </body> or re-run apply-html-head-contract.mjs <css-path> <html-file> --replace-head to relocate them.",
     "[html-head-style] layout-settings.html: found 1 custom <style> block(s) in <head>. The <head> is owned by apply-html-head-contract.mjs; move custom styles before </body> or re-run apply-html-head-contract.mjs <css-path> <html-file> --replace-head to relocate them.",
@@ -41,6 +42,8 @@
     "[html-quality] checklist.html: free-explore pages must not use secondary/accent brand variables. Use the single primary hue, neutral tints, or --state-success/warning/error/info for real semantic states.",
     "[html-quality] counter-basic.html: free-explore pages must not use secondary/accent brand variables. Use the single primary hue, neutral tints, or --state-success/warning/error/info for real semantic states.",
     "[html-quality] counter.html: free-explore pages must not use secondary/accent brand variables. Use the single primary hue, neutral tints, or --state-success/warning/error/info for real semantic states.",
+    "[html-quality] geometry-calculator-compact.html: hardcoded colors are forbidden outside <style id=\"theme-vars\">. Use brand CSS variables from the token reference.",
+    "[html-quality] geometry-calculator-compact.html: free-explore pages must not use secondary/accent brand variables. Use the single primary hue, neutral tints, or --state-success/warning/error/info for real semantic states.",
     "[html-quality] home-landscape.html: free-explore pages must not use secondary/accent brand variables. Use the single primary hue, neutral tints, or --state-success/warning/error/info for real semantic states.",
     "[html-quality] home-portrait-basic.html: free-explore pages must not use secondary/accent brand variables. Use the single primary hue, neutral tints, or --state-success/warning/error/info for real semantic states.",
     "[html-quality] home-portrait.html: free-explore pages must not use secondary/accent brand variables. Use the single primary hue, neutral tints, or --state-success/warning/error/info for real semantic states.",
@@ -57,6 +60,19 @@
     "[html-quality] timer.html: free-explore pages must not use secondary/accent brand variables. Use the single primary hue, neutral tints, or --state-success/warning/error/info for real semantic states."
   ],
   "repairPlanHints": [
+    {
+      "errorClass": "hardcoded-color-in-body",
+      "owner": "sub-agent",
+      "repairScope": "targeted-token-replace",
+      "strategy": "targeted_token_replace_once",
+      "affectedFiles": [
+        "geometry-calculator-compact.html"
+      ],
+      "repairReportPath": null,
+      "repairAlreadyAttempted": false,
+      "allowSourceRead": "no-full-html-read",
+      "maxValidationRuns": 2
+    },
     {
       "errorClass": "hardcoded-color-in-body",
       "owner": "sub-agent",
@@ -86,11 +102,12 @@
   ],
   "repairActionTable": [],
   "errorCount": 0,
-  "warningCount": 34,
+  "warningCount": 37,
   "errors": [],
   "warnings": [
     "[html-head-style] checklist.html: found 3 custom <style> block(s) in <head>. The <head> is owned by apply-html-head-contract.mjs; move custom styles before </body> or re-run apply-html-head-contract.mjs <css-path> <html-file> --replace-head to relocate them.",
     "[html-head-style] counter.html: found 1 custom <style> block(s) in <head>. The <head> is owned by apply-html-head-contract.mjs; move custom styles before </body> or re-run apply-html-head-contract.mjs <css-path> <html-file> --replace-head to relocate them.",
+    "[html-head-style] geometry-calculator-compact.html: found 1 custom <style> block(s) in <head>. The <head> is owned by apply-html-head-contract.mjs; move custom styles before </body> or re-run apply-html-head-contract.mjs <css-path> <html-file> --replace-head to relocate them.",
     "[html-head-style] home-landscape.html: found 1 custom <style> block(s) in <head>. The <head> is owned by apply-html-head-contract.mjs; move custom styles before </body> or re-run apply-html-head-contract.mjs <css-path> <html-file> --replace-head to relocate them.",
     "[html-head-style] home-portrait.html: found 1 custom <style> block(s) in <head>. The <head> is owned by apply-html-head-contract.mjs; move custom styles before </body> or re-run apply-html-head-contract.mjs <css-path> <html-file> --replace-head to relocate them.",
     "[html-head-style] layout-settings.html: found 1 custom <style> block(s) in <head>. The <head> is owned by apply-html-head-contract.mjs; move custom styles before </body> or re-run apply-html-head-contract.mjs <css-path> <html-file> --replace-head to relocate them.",
@@ -109,6 +126,8 @@
     "[html-quality] checklist.html: free-explore pages must not use secondary/accent brand variables. Use the single primary hue, neutral tints, or --state-success/warning/error/info for real semantic states.",
     "[html-quality] counter-basic.html: free-explore pages must not use secondary/accent brand variables. Use the single primary hue, neutral tints, or --state-success/warning/error/info for real semantic states.",
     "[html-quality] counter.html: free-explore pages must not use secondary/accent brand variables. Use the single primary hue, neutral tints, or --state-success/warning/error/info for real semantic states.",
+    "[html-quality] geometry-calculator-compact.html: hardcoded colors are forbidden outside <style id=\"theme-vars\">. Use brand CSS variables from the token reference.",
+    "[html-quality] geometry-calculator-compact.html: free-explore pages must not use secondary/accent brand variables. Use the single primary hue, neutral tints, or --state-success/warning/error/info for real semantic states.",
     "[html-quality] home-landscape.html: free-explore pages must not use secondary/accent brand variables. Use the single primary hue, neutral tints, or --state-success/warning/error/info for real semantic states.",
     "[html-quality] home-portrait-basic.html: free-explore pages must not use secondary/accent brand variables. Use the single primary hue, neutral tints, or --state-success/warning/error/info for real semantic states.",
     "[html-quality] home-portrait.html: free-explore pages must not use secondary/accent brand variables. Use the single primary hue, neutral tints, or --state-success/warning/error/info for real semantic states.",
@@ -139,7 +158,7 @@
   "terminalState": null,
   "nextCheck": {
     "type": "finish-readiness",
-    "command": "node \"c:\\Users\\amekaze\\.trae-cn\\builtin\\design\\hebe\\skills\\solo-design\\shared-runtime\\deterministic-tooling\\validate-finish-readiness.mjs\" \"f:\\PROJECT\\projtect_AMEtoolbox\\ametoolbox-prototype\" --check=all",
+    "command": "node \"c:\\Users\\amekaze\\.trae-cn\\builtin\\design\\default\\skills\\solo-design\\shared-runtime\\deterministic-tooling\\validate-finish-readiness.mjs\" \"f:\\PROJECT\\projtect_AMEtoolbox\\ametoolbox-prototype\" --check=all",
     "fullValidationAllowed": false,
     "reason": "workspace validation passed; run complete finish readiness before final delivery"
   },
@@ -153,7 +172,7 @@
       "name": "solo-design",
       "version": "2026.07.22.00.00.00",
       "version_source": "skill-release-manifest.json",
-      "runtime_skill_dir": "c:\\Users\\amekaze\\.trae-cn\\builtin\\design\\hebe\\skills\\solo-design",
+      "runtime_skill_dir": "c:\\Users\\amekaze\\.trae-cn\\builtin\\design\\default\\skills\\solo-design",
       "recorded_at": null,
       "expected_version": "2026.07.22.00.00.00",
       "status": "manifest_fallback",
@@ -161,12 +180,12 @@
       "reason": "runtime-orchestration-summary.json missing skillProvenance; used skill-release-manifest.json"
     },
     "renderBlockingErrorCount": 0,
-    "softWarningCount": 34,
+    "softWarningCount": 37,
     "renderBlockingErrors": [],
     "repairActionTable": [],
     "nextCheck": {
       "type": "finish-readiness",
-      "command": "node \"c:\\Users\\amekaze\\.trae-cn\\builtin\\design\\hebe\\skills\\solo-design\\shared-runtime\\deterministic-tooling\\validate-finish-readiness.mjs\" \"f:\\PROJECT\\projtect_AMEtoolbox\\ametoolbox-prototype\" --check=all",
+      "command": "node \"c:\\Users\\amekaze\\.trae-cn\\builtin\\design\\default\\skills\\solo-design\\shared-runtime\\deterministic-tooling\\validate-finish-readiness.mjs\" \"f:\\PROJECT\\projtect_AMEtoolbox\\ametoolbox-prototype\" --check=all",
       "fullValidationAllowed": false,
       "reason": "workspace validation passed; run complete finish readiness before final delivery"
     },
@@ -178,13 +197,14 @@
     ]
   },
   "projectFileHashes": {
-    "ametoolbox-prototype.design": "3ecc9d030d96e64070b3669c2974265cd677a2f2383af68bd6d750c9e6346708",
+    "ametoolbox-prototype.design": "6f33066cf182a99f23d647c804f1fca228f20ceb0a47f5c5ae998a0e54c5bf02",
     "colors_and_type.css": "30e17edcca62b90706671c1463becddf4963a9751c533d4792c3691ef1a536bf",
     "runtime-orchestration-summary.json": "13dafc6115f35ed8bca1138123e940c7c68f138b2f4b25d002f50e99900431de",
     "pages/checklist-basic.html": "746f3c9165fffa4549be28657297821fc8d0069826a4070055f6610dda242d3a",
     "pages/checklist.html": "99b2a3cab4b72809d26897c3496939cd6f7e2082e4eb01eb6f63a406b204f7b9",
     "pages/counter-basic.html": "c0a593ec906588ae3583e8cefb556c811aa3b7b200c93f2053281834f16a371a",
     "pages/counter.html": "f277d324f124d2d0c97bd4c52e3830d09b184b5552532c1a04e7570e87ac11f1",
+    "pages/geometry-calculator-compact.html": "6aac573c12892a07d601189113404a27f1633ab01dde6038a6a23a5468541a56",
     "pages/home-landscape.html": "1fa8db84033713505742b1695acfa8d405d2da439d2c992b746ea528e5dee890",
     "pages/home-portrait-basic.html": "d7f7ad24006e78004cc345beb8cf6d0c5a4358314afe8ac3d7f91c2d29a50b11",
     "pages/home-portrait.html": "21bd8f49a5df10b48973f903b7992aa4dfa4239a8e0306ceb9bf40d4cd1e4e06",
@@ -199,7 +219,7 @@
     "pages/timer.html": "b8eb18193b821a480d0a180555787bcf31dcbf82e7bfad7271b359f389bf3e0e"
   },
   "designDir": "f:\\PROJECT\\projtect_AMEtoolbox\\ametoolbox-prototype",
-  "expectedPages": 16,
+  "expectedPages": null,
   "requireInteractions": null,
-  "checkedAt": "2026-07-28T13:49:17.628Z"
+  "checkedAt": "2026-08-08T08:55:47.240Z"
 }

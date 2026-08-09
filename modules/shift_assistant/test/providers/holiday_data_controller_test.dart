@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shift_assistant_module/core/storage/memory_storage_service.dart';
+import '../helpers/fake_storage_service.dart';
 import 'package:shift_assistant_module/features/shift_assistant/data/shift_config_repository.dart';
 import 'package:shift_assistant_module/features/shift_assistant/models/shift_config.dart';
 import 'package:shift_assistant_module/features/shift_assistant/providers/holiday_data_controller.dart';
@@ -23,7 +23,7 @@ void main() {
     late ShiftConfigController configController;
 
     setUp(() async {
-      final storage = MemoryStorageService();
+      final storage = FakeStorageService();
       final repository = ShiftConfigRepository(storage: storage);
       configController = ShiftConfigController(repository: repository);
       await configController.load();

@@ -7,11 +7,11 @@ import 'package:ametoolbox/core/models/sync_config.dart';
 import 'package:ametoolbox/core/models/theme_config.dart';
 import 'package:ametoolbox/core/storage/storage_service.dart';
 
-/// 内存存储服务实现。
+/// 测试用内存存储服务。
 ///
-/// 仅用于子项目独立运行与测试，不持久化到磁盘；
-/// 进程重启后数据丢失，但足够验证模块 UI 与状态管理。
-class MemoryStorageService implements StorageService {
+/// 仅用于单元测试，不持久化到磁盘；进程重启后数据丢失，
+/// 但足够验证模块业务逻辑与状态管理。
+class FakeStorageService implements StorageService {
   final Map<String, dynamic> _data = {};
 
   @override

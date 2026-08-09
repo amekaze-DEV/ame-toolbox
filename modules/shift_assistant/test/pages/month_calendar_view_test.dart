@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:ametoolbox/core/input/input_mode_scope.dart';
 import 'package:ametoolbox/core/models/input_mode.dart';
-import 'package:shift_assistant_module/core/storage/memory_storage_service.dart';
+import '../helpers/fake_storage_service.dart';
 import 'package:shift_assistant_module/features/shift_assistant/data/shift_config_repository.dart';
 import 'package:shift_assistant_module/features/shift_assistant/models/shift_config.dart';
 import 'package:shift_assistant_module/features/shift_assistant/pages/month_calendar_view.dart';
@@ -50,7 +50,7 @@ Future<void> _pumpCalendarView(
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
   }
-  final storage = MemoryStorageService();
+  final storage = FakeStorageService();
   await storage.initialize();
 
   final repository = ShiftConfigRepository(storage: storage);
@@ -93,7 +93,7 @@ ShiftConfig _configWithThreeGroups() => ShiftConfig(
           id: 'rotation_1',
           name: '测试轮班',
           baseDate: DateTime(2026, 8, 1),
-          cycleCount: 1,
+          cycleDays: 3,
           groups: const [
             ShiftGroup(id: 'group_a', name: '甲班'),
             ShiftGroup(id: 'group_b', name: '乙班'),

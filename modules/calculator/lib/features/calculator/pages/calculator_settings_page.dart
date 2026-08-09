@@ -63,27 +63,11 @@ class CalculatorSettingsPage extends ConsumerWidget {
             title: '首页仪表盘卡片',
             children: [
               SwitchListTile(
-                title: const Text('快速计算器'),
-                subtitle: const Text('在首页显示迷你计算器卡片'),
+                title: const Text('首页快速计算'),
+                subtitle: const Text('在首页显示快速计算卡片（含最近计算）'),
                 value: config.dashboardQuickCalc,
                 onChanged: (value) => configController.setDashboardQuickCalc(value),
               ),
-              SwitchListTile(
-                title: const Text('最近历史'),
-                subtitle: const Text('在首页显示最近计算历史卡片'),
-                value: config.dashboardHistory,
-                onChanged: (value) => configController.setDashboardHistory(value),
-              ),
-              if (config.dashboardQuickCalc && config.dashboardHistory)
-                _CardOrderTile(
-                  quickCalcOrder: config.dashboardQuickCalcOrder,
-                  historyOrder: config.dashboardHistoryOrder,
-                  onChanged: (quickCalc, history) =>
-                      configController.setDashboardOrders(
-                    quickCalcOrder: quickCalc,
-                    historyOrder: history,
-                  ),
-                ),
             ],
           ),
           const SizedBox(height: 12),
@@ -218,71 +202,6 @@ class _DecimalPrecisionTile extends StatelessWidget {
           onChanged: (value) => onChanged(value.round()),
         ),
       ),
-    );
-  }
-}
-
-class _CardOrderTile extends StatelessWidget {
-  final int quickCalcOrder;
-  final int historyOrder;
-  final void Function(int quickCalc, int history) onChanged;
-
-  const _CardOrderTile({
-    required this.quickCalcOrder,
-    required this.historyOrder,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: _OrderDropdown(
-              label: '快速计算器',
-              value: quickCalcOrder,
-              onChanged: (value) => onChanged(value, historyOrder),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _OrderDropdown(
-              label: '最近历史',
-              value: historyOrder,
-              onChanged: (value) => onChanged(quickCalcOrder, value),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _OrderDropdown extends StatelessWidget {
-  final String label;
-  final int value;
-  final ValueChanged<int> onChanged;
-
-  const _OrderDropdown({
-    required this.label,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownMenu<int>(
-      label: Text(label),
-      initialSelection: value,
-      dropdownMenuEntries: const [
-        DropdownMenuEntry(value: 0, label: '位置 0'),
-        DropdownMenuEntry(value: 1, label: '位置 1'),
-      ],
-      onSelected: (value) {
-        if (value != null) onChanged(value);
-      },
     );
   }
 }

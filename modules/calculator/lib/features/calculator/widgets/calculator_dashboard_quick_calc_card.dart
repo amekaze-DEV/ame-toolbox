@@ -1,17 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
-import '../pages/calculator_page.dart';
+import '../models/calculation_history.dart';
+import '../models/calculator_type.dart';
 import '../providers/calculator_config_provider.dart';
 import '../providers/scientific_calculator_provider.dart';
+import '../services/history_backfill_service.dart';
 
-/// 首页快速计算器卡片。
+/// 多功能计算器的首页入口卡片（快速计算 + 最近计算历史）。
 ///
-/// 提供一个极简表达式输入框，实时显示计算结果；
-/// 当 [CalculatorConfig.showFullKeyboard] 开启时额外显示精简数字键盘。
-/// 点击卡片空白处进入模块主页。
+/// 作为模块入口卡片替换首页通用的模块摘要卡片，可随首页模块列表拖动排序。
+/// 上部提供极简算式输入框与软键盘（`+ - × ÷ ( ) C =`），实时显示计算结果；
+/// 按下 `=` 计算成功后写入科学计算历史记录。
+/// 下部展示最近 5 条计算历史，点击条目通过 [onOpenModule] 进入模块主页并回填。
+///
+/// 卡片使用 [MainAxisSize.min] 与可收缩的历史列表，高度随内容自适应。
 class CalculatorDashboardQuickCalcCard extends ConsumerStatefulWidget {
-  const CalculatorDashboardQuickCalcCard({super.key});
+  const CalculatorDashboardQuickCalcCard({
+    super.key,
+    required this.onOpenModule,
+  });
+
+  /// 进入多功能计算器模块主页的回调（切换底座导航，保留导航栏）。
+  final VoidCallback onOpenModule;
 
   @override
   ConsumerState<CalculatorDashboardQuickCalcCard> createState() =>
@@ -48,76 +60,110 @@ class _CalculatorDashboardQuickCalcCardState
   @override
   Widget build(BuildContext context) {
     final config = ref.watch(calculatorConfigProvider).config;
+    final history = config.history.take(5).toList();
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: _openModule,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.calculate_outlined,
-                    color: colorScheme.primary,
-                    size: 28,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      '快速计算',
-                      style: Theme.of(context).textTheme.titleMedium,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _controller,
-                decoration: InputDecoration(
-                  hintText: '输入算式',
-                  filled: true,
-                  fillColor: colorScheme.surfaceContainerHighest,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.calculate_outlined,
+                  color: colorScheme.primary,
+                  size: 26,
                 ),
-                style: Theme.of(context).textTheme.bodyLarge,
-                keyboardType: TextInputType.text,
-                textInputAction: TextInputAction.done,
-                onChanged: _onExpressionChanged,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _result.isEmpty ? ' ' : _result,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: colorScheme.onSurface,
-                      fontWeight: FontWeight.w500,
-                    ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (!config.showFullKeyboard) ...[
-                const SizedBox(height: 12),
-                _CompactOperatorBar(
-                  onOperator: _append,
-                  onClear: _clear,
-                  onCalculate: _calculate,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '多功能计算器',
+                    style: textTheme.titleMedium,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
-            ],
-          ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _controller,
+              decoration: InputDecoration(
+                hintText: '输入算式',
+                filled: true,
+                fillColor: colorScheme.surfaceContainerHighest,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+              ),
+              style: textTheme.bodyLarge,
+              keyboardType: TextInputType.text,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _calculate(),
+              onChanged: _onExpressionChanged,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _result.isEmpty ? ' ' : _result,
+              style: textTheme.headlineSmall?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 6),
+            _OperatorBar(
+              onOperator: _append,
+              onClear: _clear,
+              onCalculate: _calculate,
+            ),
+            const Divider(height: 16),
+            Text(
+              '最近计算',
+              style: textTheme.titleSmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 4),
+            if (history.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Text(
+                  '暂无计算记录',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 216),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: history.length,
+                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final record = history[index];
+                    return _HistoryTile(
+                      record: record,
+                      onTap: () => _backfillAndOpen(context, record),
+                    );
+                  },
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -153,25 +199,56 @@ class _CalculatorDashboardQuickCalcCardState
     });
   }
 
+  /// 计算并将成功结果写入科学计算历史记录。
   void _calculate() {
-    _onExpressionChanged(_controller.text);
+    final expression = _controller.text.trim();
+    if (expression.isEmpty) return;
+
+    final configController = ref.read(calculatorConfigProvider);
+    final config = configController.config;
+    final service = ref.read(scientificCalculatorServiceProvider);
+    final result = service.evaluate(
+      expression,
+      degrees: true,
+      precision: config.decimalPrecision,
+      scientificNotation: config.scientificNotation,
+    );
+
+    if (!result.isError && result.value != null) {
+      configController.addHistory(
+        CalculationHistory(
+          expression: expression,
+          result: result.display,
+          timestamp: DateTime.now().toUtc(),
+          angleMode: 'DEG',
+          calculatorType: CalculatorType.scientific,
+        ),
+      );
+      _controller.clear();
+    }
+    setState(() {
+      _result = result.isError ? '' : result.display;
+    });
   }
 
-  void _openModule() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const CalculatorPage(),
-      ),
-    );
+  Future<void> _backfillAndOpen(
+    BuildContext context,
+    CalculationHistory record,
+  ) async {
+    await HistoryBackfillService.backfillExpression(ref, record);
+    if (context.mounted) {
+      widget.onOpenModule();
+    }
   }
 }
 
-class _CompactOperatorBar extends StatelessWidget {
+/// 精简软键盘：`+ - × ÷ ( ) C =`。
+class _OperatorBar extends StatelessWidget {
   final ValueChanged<String> onOperator;
   final VoidCallback onClear;
   final VoidCallback onCalculate;
 
-  const _CompactOperatorBar({
+  const _OperatorBar({
     required this.onOperator,
     required this.onClear,
     required this.onCalculate,
@@ -179,11 +256,11 @@ class _CompactOperatorBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final operators = ['+', '-', '×', '÷', '(', ')'];
+    const operators = ['+', '-', '×', '÷', '(', ')'];
 
     return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+      spacing: 6,
+      runSpacing: 4,
       children: [
         for (final op in operators)
           ActionChip(
@@ -208,5 +285,68 @@ class _CompactOperatorBar extends StatelessWidget {
       '÷' => '/',
       _ => op,
     };
+  }
+}
+
+/// 单条最近计算记录。
+class _HistoryTile extends StatelessWidget {
+  final CalculationHistory record;
+  final VoidCallback onTap;
+
+  const _HistoryTile({
+    required this.record,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final timeText = DateFormat('MM-dd HH:mm').format(
+      record.timestamp.toLocal(),
+    );
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              record.expression,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    record.result,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w500,
+                        ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Text(
+                  timeText,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

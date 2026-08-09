@@ -13,7 +13,7 @@ void main() {
         id: 'r1',
         name: '四班两倒单循环',
         baseDate: DateTime(2026, 5, 1),
-        cycleCount: 1,
+        cycleDays: 4,
         groups: const [
           ShiftGroup(id: 'g1', name: '一班'),
           ShiftGroup(id: 'g2', name: '二班'),

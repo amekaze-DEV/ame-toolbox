@@ -373,6 +373,29 @@
       "devMetadata": {
         "htmlSrc": "pages/settings-basic.html"
       }
+    },
+    {
+      "id": "page-geometry-calculator-compact",
+      "title": "几何计算（紧凑版）",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1786179125000,
+      "canvasData": {
+        "x": 0,
+        "y": 920,
+        "group": 0,
+        "deviceType": "mobile",
+        "layoutSnapshot": {
+          "version": 1,
+          "contentHeight": 900,
+          "viewportWidth": 375,
+          "sourceHash": "fnv1a-geometry-compact",
+          "measuredAt": 1786179125000
+        }
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/geometry-calculator-compact.html"
+      }
     }
   ],
   "config": {

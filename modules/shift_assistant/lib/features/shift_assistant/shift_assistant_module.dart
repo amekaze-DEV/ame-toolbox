@@ -16,8 +16,7 @@ import 'services/holiday_data_service.dart';
 
 /// 倒班助手模块。
 ///
-/// 实现 [ModuleContract]，可在隔离环境中独立运行，
-/// 开发完成后直接合并到主项目并注册到 ModuleRegistry。
+/// 实现 [ModuleContract]，已合并到主项目并在 [ModuleRegistry] 注册。
 class ShiftAssistantModule implements ModuleContract {
   ShiftAssistantModule({HolidayDataService? holidayDataService})
       : _holidayDataService = holidayDataService ?? HolidayDataService();
@@ -32,7 +31,7 @@ class ShiftAssistantModule implements ModuleContract {
         id: 'shift_assistant',
         name: '倒班助手',
         description: '多班组轮班排班查询、节假日日历与工时统计',
-        iconName: 'calendar_month',
+        iconName: 'shift',
         defaultEnabled: true,
       );
 
@@ -50,6 +49,17 @@ class ShiftAssistantModule implements ModuleContract {
   List<Widget> buildDashboardWidgets(BuildContext context, WidgetRef ref) {
     return const [];
   }
+
+  @override
+  bool get hasCustomEntryCard => false;
+
+  @override
+  Widget? buildEntryCard(
+    BuildContext context,
+    WidgetRef ref,
+    VoidCallback onOpenModule,
+  ) =>
+      null;
 
   @override
   ModuleSummary get summary {

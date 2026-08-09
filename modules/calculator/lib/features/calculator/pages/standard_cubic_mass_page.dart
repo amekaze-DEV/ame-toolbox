@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ametoolbox/shared/widgets/adaptive_button.dart';
-import 'package:ametoolbox/shared/widgets/adaptive_list_tile.dart';
 
 import '../models/gas_type.dart';
+import '../providers/calculator_config_provider.dart';
 import '../providers/standard_cubic_mass_controller.dart';
 import '../providers/standard_cubic_mass_provider.dart';
 import '../widgets/numeric_keypad.dart';
@@ -14,23 +14,33 @@ import '../widgets/numeric_keypad.dart';
 class StandardCubicMassPage extends ConsumerWidget {
   const StandardCubicMassPage({super.key});
 
+  /// 质量单位中文对照。
+  static const Map<String, String> _massUnitDisplayNames = {
+    'kg': '千克',
+    'g': '克',
+    't': '吨',
+    'lb': '磅',
+    'oz': '盎司',
+  };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.watch(standardCubicMassProvider);
     final colorScheme = Theme.of(context).colorScheme;
+    final showFullKeyboard = ref.watch(calculatorConfigProvider).config.showFullKeyboard;
 
     return Column(
       children: [
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildGasSelector(context, ref, controller),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 _buildDensityCard(context, controller),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 _buildConverterCard(context, ref, controller),
                 if (controller.error != null) ...[
                   const SizedBox(height: 12),
@@ -46,6 +56,7 @@ class StandardCubicMassPage extends ConsumerWidget {
           ),
         ),
         NumericKeypad(
+          showFullKeyboard: showFullKeyboard,
           showRec: true,
           onKeyPressed: (value) => _handleKeyPress(ref, value),
         ),
@@ -74,28 +85,32 @@ class StandardCubicMassPage extends ConsumerWidget {
     WidgetRef ref,
     StandardCubicMassController controller,
   ) {
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        DropdownMenu<GasType>(
-          initialSelection: controller.gasType,
-          requestFocusOnTap: false,
-          label: const Text('气体类型'),
-          expandedInsets: const EdgeInsets.symmetric(horizontal: 0),
-          dropdownMenuEntries: GasType.values.map((gas) {
-            return DropdownMenuEntry(
-              value: gas,
-              label: gas.displayName,
-            );
-          }).toList(),
-          onSelected: (value) {
-            if (value != null) {
-              ref.read(standardCubicMassProvider).setGasType(value);
-            }
-          },
+        Expanded(
+          child: DropdownMenu<GasType>(
+            initialSelection: controller.gasType,
+            requestFocusOnTap: false,
+            label: const Text('气体类型'),
+            expandedInsets: const EdgeInsets.symmetric(horizontal: 0),
+            dropdownMenuEntries: GasType.values.map((gas) {
+              return DropdownMenuEntry(
+                value: gas,
+                label: gas.displayName,
+              );
+            }).toList(),
+            onSelected: (value) {
+              if (value != null) {
+                ref.read(standardCubicMassProvider).setGasType(value);
+              }
+            },
+          ),
         ),
-        const SizedBox(height: 12),
-        _buildMolarMassField(context, ref, controller),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildMolarMassField(context, ref, controller),
+        ),
       ],
     );
   }
@@ -120,9 +135,6 @@ class StandardCubicMassPage extends ConsumerWidget {
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       decoration: InputDecoration(
         labelText: '摩尔质量 M (g/mol)',
-        helperText: controller.isCustom
-            ? '自定义气体'
-            : '可修改，修改后自动变为自定义气体',
         border: const OutlineInputBorder(),
         enabledBorder: OutlineInputBorder(
           borderSide: BorderSide(
@@ -148,19 +160,25 @@ class StandardCubicMassPage extends ConsumerWidget {
     return Card(
       elevation: 0,
       color: colorScheme.surfaceContainerLow,
-      child: AdaptiveListTile(
-        title: Text(
-          '推导标准密度 ρ',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-        ),
-        subtitle: Text(
-          controller.density.isEmpty ? '—' : '${controller.density} kg/Nm³',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w500,
-              ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '推导标准密度 ρ',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            Text(
+              controller.density.isEmpty ? '—' : '${controller.density} kg/Nm³',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+          ],
         ),
       ),
     );
@@ -205,6 +223,9 @@ class StandardCubicMassPage extends ConsumerWidget {
                         units: isVolumeToMass
                             ? const ['Nm³']
                             : const ['kg', 'g', 't', 'lb', 'oz'],
+                        unitDisplayNames: isVolumeToMass
+                            ? null
+                            : _massUnitDisplayNames,
                         readOnly: false,
                         unitReadOnly: isVolumeToMass,
                         onValueChanged: (value) {
@@ -220,7 +241,7 @@ class StandardCubicMassPage extends ConsumerWidget {
                                 ref.read(standardCubicMassProvider).setMassUnit(unit!);
                               },
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       // 下方始终为输出框
                       _buildQuantityRow(
                         context,
@@ -237,6 +258,9 @@ class StandardCubicMassPage extends ConsumerWidget {
                         units: isVolumeToMass
                             ? const ['kg', 'g', 't', 'lb', 'oz']
                             : const ['Nm³'],
+                        unitDisplayNames: isVolumeToMass
+                            ? _massUnitDisplayNames
+                            : null,
                         readOnly: true,
                         unitReadOnly: !isVolumeToMass,
                         onValueChanged: (_) {},
@@ -257,7 +281,7 @@ class StandardCubicMassPage extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             _buildFormulaText(context),
           ],
         ),
@@ -299,83 +323,105 @@ class StandardCubicMassPage extends ConsumerWidget {
     required List<String> units,
     required ValueChanged<String> onValueChanged,
     ValueChanged<String?>? onUnitChanged,
+    Map<String, String>? unitDisplayNames,
     bool readOnly = false,
     bool unitReadOnly = false,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final isActive = controller.activeField == field;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final narrow = constraints.maxWidth < 360;
-
-        final valueField = TextField(
-          controller: TextEditingController(text: value)
-            ..selection = TextSelection.collapsed(offset: value.length),
-          readOnly: readOnly,
-          keyboardType: readOnly
-              ? TextInputType.none
-              : const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
-            labelText: label,
-            hintText: readOnly ? '' : '请输入数值',
-            border: const OutlineInputBorder(),
-            enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(
-                color: isActive ? colorScheme.primary : colorScheme.outline,
-              ),
-            ),
+    return TextField(
+      controller: TextEditingController(text: value)
+        ..selection = TextSelection.collapsed(offset: value.length),
+      readOnly: readOnly,
+      keyboardType: readOnly
+          ? TextInputType.none
+          : const TextInputType.numberWithOptions(decimal: true),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: readOnly ? '' : '请输入数值',
+        border: const OutlineInputBorder(),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(
+            color: isActive ? colorScheme.primary : colorScheme.outline,
           ),
-          onTap: readOnly
-              ? null
-              : () {
-                  ref.read(standardCubicMassProvider).setActiveField(field);
-                },
-          onChanged: readOnly ? null : onValueChanged,
-        );
-
-        final unitField = unitReadOnly
-            ? TextField(
-                controller: TextEditingController(text: unit)
-                  ..selection = TextSelection.collapsed(offset: unit.length),
-                readOnly: true,
-                keyboardType: TextInputType.none,
-                decoration: const InputDecoration(
-                  labelText: '单位',
-                  border: OutlineInputBorder(),
+        ),
+        suffixIconConstraints: const BoxConstraints(
+          minWidth: 76,
+          minHeight: 40,
+        ),
+        suffixIcon: unitReadOnly
+            ? Padding(
+                padding: const EdgeInsets.only(right: 32),
+                child: Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: Text(
+                    unit,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                 ),
               )
-            : DropdownMenu<String>(
-                initialSelection: unit,
-                requestFocusOnTap: false,
-                label: const Text('单位'),
-                expandedInsets: EdgeInsets.zero,
-                dropdownMenuEntries: units.map((u) {
-                  return DropdownMenuEntry(value: u, label: u);
-                }).toList(),
-                onSelected: onUnitChanged,
-              );
+            : _buildUnitDropdown(
+                context,
+                value: unit,
+                units: units,
+                displayNames: unitDisplayNames,
+                onSelected: onUnitChanged ?? (_) {},
+              ),
+      ),
+      onTap: readOnly
+          ? null
+          : () {
+              ref.read(standardCubicMassProvider).setActiveField(field);
+            },
+      onChanged: readOnly ? null : onValueChanged,
+    );
+  }
 
-        if (narrow) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              valueField,
-              const SizedBox(height: 8),
-              unitField,
-            ],
+  Widget _buildUnitDropdown(
+    BuildContext context, {
+    required String value,
+    required List<String> units,
+    required ValueChanged<String?> onSelected,
+    Map<String, String>? displayNames,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<String>(
+        value: value,
+        isDense: true,
+        icon: const Icon(Icons.arrow_drop_down, size: 18),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+        alignment: AlignmentDirectional.centerEnd,
+        selectedItemBuilder: (context) {
+          return units.map((unit) {
+            final displayName = displayNames?[unit];
+            return Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: Text(
+                displayName != null ? '$unit（$displayName）' : unit,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }).toList();
+        },
+        items: units.map((unit) {
+          final displayName = displayNames?[unit];
+          return DropdownMenuItem(
+            value: unit,
+            child: Text(
+              displayName != null ? '$unit（$displayName）' : unit,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
           );
-        }
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(flex: 2, child: valueField),
-            const SizedBox(width: 12),
-            Expanded(flex: 1, child: unitField),
-          ],
-        );
-      },
+        }).toList(),
+        onChanged: onSelected,
+      ),
     );
   }
 }

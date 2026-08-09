@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ametoolbox/core/input/input_mode_scope.dart';
 import 'package:ametoolbox/core/models/input_mode.dart';
 import 'package:ametoolbox/shared/widgets/adaptive_button.dart';
-import 'package:shift_assistant_module/core/storage/memory_storage_service.dart';
+import '../helpers/fake_storage_service.dart';
 import 'package:shift_assistant_module/features/shift_assistant/data/shift_config_repository.dart';
 import 'package:shift_assistant_module/features/shift_assistant/models/shift_config.dart';
 import 'package:shift_assistant_module/features/shift_assistant/pages/shift_assistant_settings_page.dart';
@@ -35,6 +35,7 @@ void main() {
       expect(find.byType(AlertDialog), findsOneWidget);
       expect(find.text('添加轮班'), findsOneWidget);
 
+      // 第一个输入框为轮班名称。
       await tester.enterText(find.byType(TextField).first, '夜班轮班');
       await tester.tap(find.text('保存'));
       await tester.pumpAndSettle();
@@ -68,23 +69,31 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('increasing cycle count resizes assignment matrix',
+    testWidgets('increasing cycle days resizes assignment matrix',
         (tester) async {
       await _pumpSettingsPage(tester, _defaultConfig());
 
       await tester.tap(find.byIcon(Icons.edit));
       await tester.pumpAndSettle();
 
-      // 默认 4 个班组 × 1 个循环 = 4 天。
+      // 默认周期为 4 天。
       expect(find.text('D4'), findsOneWidget);
       expect(find.text('D5'), findsNothing);
 
-      // 增加循环数。
-      await tester.tap(find.widgetWithIcon(IconButton, Icons.add));
+      // 定位“循环周期天数”所在行，然后点击该行的增加按钮。
+      final cycleDaysRow = find.ancestor(
+        of: find.text('循环周期天数：'),
+        matching: find.byType(Row),
+      );
+      final addCycleDaysButton = find.descendant(
+        of: cycleDaysRow,
+        matching: find.widgetWithIcon(IconButton, Icons.add),
+      );
+      await tester.tap(addCycleDaysButton);
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(find.text('D8'), findsOneWidget);
+      expect(find.text('D5'), findsOneWidget);
     });
   });
 }
@@ -93,7 +102,7 @@ Future<void> _pumpSettingsPage(
   WidgetTester tester,
   ShiftConfig config,
 ) async {
-  final storage = MemoryStorageService();
+  final storage = FakeStorageService();
   await storage.initialize();
 
   final repository = ShiftConfigRepository(storage: storage);
@@ -138,7 +147,7 @@ ShiftConfig _configWithTwoRotations() => ShiftConfig(
           id: 'rotation_a',
           name: '甲轮班',
           baseDate: DateTime(2026, 8, 1),
-          cycleCount: 1,
+          cycleDays: 2,
           groups: const [
             ShiftGroup(id: 'group_a', name: '甲班'),
           ],
@@ -155,7 +164,7 @@ ShiftConfig _configWithTwoRotations() => ShiftConfig(
           id: 'rotation_b',
           name: '乙轮班',
           baseDate: DateTime(2026, 8, 1),
-          cycleCount: 1,
+          cycleDays: 2,
           groups: const [
             ShiftGroup(id: 'group_b', name: '乙班'),
           ],

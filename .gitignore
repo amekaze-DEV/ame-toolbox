@@ -50,3 +50,9 @@ app.*.map.json
 # Local build logs and user data
 build_*.txt
 userfile/
+
+# Hive runtime data
+.hive_data/
+
+# Windows reserved device-name artifact
+con

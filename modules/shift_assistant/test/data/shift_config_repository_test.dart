@@ -1,15 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shift_assistant_module/core/storage/memory_storage_service.dart';
+import '../helpers/fake_storage_service.dart';
 import 'package:shift_assistant_module/features/shift_assistant/data/shift_config_repository.dart';
 import 'package:shift_assistant_module/features/shift_assistant/models/shift_config.dart';
 
 void main() {
   group('ShiftConfigRepository', () {
-    late MemoryStorageService storage;
+    late FakeStorageService storage;
     late ShiftConfigRepository repository;
 
     setUp(() async {
-      storage = MemoryStorageService();
+      storage = FakeStorageService();
       await storage.initialize();
       repository = ShiftConfigRepository(storage: storage);
     });
@@ -42,7 +42,7 @@ ShiftConfig _customConfig() => ShiftConfig(
           id: 'rotation_a',
           name: '甲轮班',
           baseDate: _epoch,
-          cycleCount: 1,
+          cycleDays: 3,
           groups: const [
             ShiftGroup(id: 'group_a', name: '甲班'),
             ShiftGroup(id: 'group_b', name: '乙班'),

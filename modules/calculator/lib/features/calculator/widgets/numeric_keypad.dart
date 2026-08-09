@@ -21,6 +21,7 @@ class _KeyCell {
 ///
 /// 用于单位转换、几何计算、标准立方米-质量等需要数字输入的模块。
 /// 支持可选的符号切换按钮（±）。
+/// 当 [showFullKeyboard] 为 false 时仅显示控制键（紧凑模式）。
 class NumericKeypad extends StatelessWidget {
   final void Function(String value) onKeyPressed;
   final bool showSignToggle;
@@ -31,11 +32,15 @@ class NumericKeypad extends StatelessWidget {
   /// 由调用方处理保存历史记录逻辑。
   final bool showRec;
 
+  /// 是否显示完整键盘。false 时仅显示控制键（C、⌫、±、REC）。
+  final bool showFullKeyboard;
+
   const NumericKeypad({
     super.key,
     required this.onKeyPressed,
     this.showSignToggle = false,
     this.showRec = false,
+    this.showFullKeyboard = true,
   });
 
   @override
@@ -45,7 +50,7 @@ class NumericKeypad extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         const columnCount = 4;
-        const rowCount = 4;
+        final rowCount = showFullKeyboard ? 4 : 1;
         const containerPadding = 8.0;
         const rowSpacing = 6.0;
         const cellSpacing = 6.0;
@@ -55,15 +60,19 @@ class NumericKeypad extends StatelessWidget {
         final verticalSpacing = containerPadding * 2 + rowCount * rowSpacing;
 
         final screenHeight = MediaQuery.sizeOf(context).height;
-        final maxAllowedHeight = screenHeight * 0.35;
+        final maxAllowedHeight = showFullKeyboard ? screenHeight * 0.4 : screenHeight * 0.1;
+        final minAllowedHeight = 0.0;
         final widthFromHeight = horizontalSpacing +
             columnCount *
                 (maxAllowedHeight - verticalSpacing) /
                 rowCount *
                 keyAspectRatio;
         final keyboardWidth = math.min(constraints.maxWidth, widthFromHeight);
-        final keyboardHeight = verticalSpacing +
-            rowCount * (keyboardWidth - horizontalSpacing) / columnCount / keyAspectRatio;
+        final keyboardHeight = math.max(
+          minAllowedHeight,
+          verticalSpacing +
+              rowCount * (keyboardWidth - horizontalSpacing) / columnCount / keyAspectRatio,
+        );
 
         final rows = _buildRows();
 
@@ -75,7 +84,6 @@ class NumericKeypad extends StatelessWidget {
               color: colorScheme.surfaceContainerHighest,
               padding: const EdgeInsets.all(containerPadding),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 children: rows.map((row) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: rowSpacing),
@@ -117,6 +125,20 @@ class NumericKeypad extends StatelessWidget {
   }
 
   List<List<_KeyCell>> _buildRows() {
+    if (!showFullKeyboard) {
+      return [
+        [
+          const _KeyCell(label: 'C', value: 'clear'),
+          const _KeyCell(label: '⌫', value: 'backspace', icon: Icons.backspace_outlined),
+          _KeyCell(
+            label: '±',
+            value: '±',
+            enabled: showSignToggle,
+          ),
+          const _KeyCell(label: 'REC', value: 'rec'),
+        ],
+      ];
+    }
     return [
       [
         const _KeyCell(label: '7', value: '7'),

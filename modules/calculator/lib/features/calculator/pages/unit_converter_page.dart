@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ametoolbox/shared/widgets/adaptive_button.dart';
 
 import '../models/unit_category.dart';
+import '../providers/calculator_config_provider.dart';
 import '../providers/unit_converter_controller.dart';
 import '../providers/unit_converter_provider.dart';
 import '../widgets/numeric_keypad.dart';
@@ -17,6 +18,7 @@ class UnitConverterPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.watch(unitConverterProvider);
     final colorScheme = Theme.of(context).colorScheme;
+    final showFullKeyboard = ref.watch(calculatorConfigProvider).config.showFullKeyboard;
 
     return Column(
       children: [
@@ -43,6 +45,7 @@ class UnitConverterPage extends ConsumerWidget {
           ),
         ),
         NumericKeypad(
+          showFullKeyboard: showFullKeyboard,
           showSignToggle: controller.category == UnitCategory.temperature,
           showRec: true,
           onKeyPressed: (value) => _handleKeyPress(ref, value),
@@ -75,8 +78,9 @@ class UnitConverterPage extends ConsumerWidget {
     UnitConverterController controller,
   ) {
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 200),
+      constraints: const BoxConstraints(maxWidth: 140),
       child: DropdownMenu<UnitCategory>(
+        width: 140,
         initialSelection: controller.category,
         requestFocusOnTap: false,
         label: const Text('类别'),
@@ -180,60 +184,76 @@ class UnitConverterPage extends ConsumerWidget {
     ValueChanged<String>? onValueChanged,
     bool readOnly = false,
   }) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final narrow = constraints.maxWidth < 360;
-
-        final valueField = TextField(
-          controller: TextEditingController(text: value)
-            ..selection = TextSelection.collapsed(offset: value.length),
-          readOnly: readOnly,
-          keyboardType: readOnly
-              ? TextInputType.none
-              : const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
-            labelText: label,
-            hintText: readOnly ? '' : '请输入数值',
-            border: const OutlineInputBorder(),
-          ),
-          onChanged: onValueChanged,
-        );
-
-        final unitDropdown = DropdownMenu<String>(
-          initialSelection: unit,
-          requestFocusOnTap: false,
-          label: const Text('单位'),
-          expandedInsets: EdgeInsets.zero,
-          dropdownMenuEntries: units.map((u) {
-            final displayName = controller.category.unitDisplayNames[u];
-            return DropdownMenuEntry(
-              value: u,
-              label: displayName != null ? '$u（$displayName）' : u,
-            );
-          }).toList(),
+    return TextField(
+      controller: TextEditingController(text: value)
+        ..selection = TextSelection.collapsed(offset: value.length),
+      readOnly: readOnly,
+      keyboardType: readOnly
+          ? TextInputType.none
+          : const TextInputType.numberWithOptions(decimal: true),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: readOnly ? '' : '请输入数值',
+        border: const OutlineInputBorder(),
+        suffixIconConstraints: const BoxConstraints(
+          minWidth: 76,
+          minHeight: 40,
+        ),
+        suffixIcon: _buildUnitDropdown(
+          context,
+          value: unit,
+          units: units,
+          displayNames: controller.category.unitDisplayNames,
           onSelected: onUnitChanged,
-        );
+        ),
+      ),
+      onChanged: readOnly ? null : onValueChanged,
+    );
+  }
 
-        if (narrow) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              valueField,
-              const SizedBox(height: 8),
-              unitDropdown,
-            ],
+  Widget _buildUnitDropdown(
+    BuildContext context, {
+    required String value,
+    required List<String> units,
+    required Map<String, String> displayNames,
+    required ValueChanged<String?> onSelected,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<String>(
+        value: value,
+        isDense: true,
+        icon: const Icon(Icons.arrow_drop_down, size: 18),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+        alignment: AlignmentDirectional.centerEnd,
+        selectedItemBuilder: (context) {
+          return units.map((unit) {
+            return Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: Text(
+                unit,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }).toList();
+        },
+        items: units.map((unit) {
+          final displayName = displayNames[unit];
+          return DropdownMenuItem(
+            value: unit,
+            child: Text(
+              displayName != null ? '$unit（$displayName）' : unit,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           );
-        }
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(flex: 2, child: valueField),
-            const SizedBox(width: 12),
-            Expanded(flex: 1, child: unitDropdown),
-          ],
-        );
-      },
+        }).toList(),
+        onChanged: onSelected,
+      ),
     );
   }
 }

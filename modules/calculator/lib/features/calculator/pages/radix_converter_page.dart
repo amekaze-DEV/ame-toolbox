@@ -4,6 +4,7 @@ import 'package:ametoolbox/shared/widgets/adaptive_button.dart';
 
 import '../providers/radix_converter_controller.dart';
 import '../providers/radix_converter_provider.dart';
+import '../providers/calculator_config_provider.dart';
 import '../services/radix_converter_service.dart';
 import '../widgets/radix_input_formatter.dart';
 import '../widgets/radix_keypad.dart';
@@ -18,6 +19,7 @@ class RadixConverterPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.watch(radixConverterProvider);
     final colorScheme = Theme.of(context).colorScheme;
+    final showFullKeyboard = ref.watch(calculatorConfigProvider).config.showFullKeyboard;
 
     return Column(
       children: [
@@ -42,6 +44,7 @@ class RadixConverterPage extends ConsumerWidget {
           ),
         ),
         RadixKeypad(
+          showFullKeyboard: showFullKeyboard,
           activeType: controller.activeType,
           onKeyPressed: (value) => _handleKeyPress(ref, value),
         ),

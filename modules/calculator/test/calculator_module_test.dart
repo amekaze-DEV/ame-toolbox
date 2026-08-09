@@ -3,8 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:calculator_module/features/calculator/calculator_module.dart';
 import 'package:calculator_module/features/calculator/models/calculation_history.dart';
 import 'package:calculator_module/features/calculator/models/calculator_type.dart';
-import 'package:calculator_module/features/calculator/widgets/calculator_dashboard_history_card.dart';
-import 'package:calculator_module/features/calculator/widgets/calculator_dashboard_quick_calc_card.dart';
 
 import 'helpers/fake_storage_service.dart';
 
@@ -24,7 +22,7 @@ void main() {
       final definition = module.definition;
       expect(definition.id, 'calculator');
       expect(definition.name, '多功能计算器');
-      expect(definition.iconName, 'calculate');
+      expect(definition.iconName, 'calculator');
       expect(definition.defaultEnabled, true);
     });
 
@@ -37,7 +35,7 @@ void main() {
       expect(module.buildSettingsPage, isA<Function>());
     });
 
-    test('buildDashboardWidgets 默认返回两个卡片', () {
+    test('buildDashboardWidgets 默认返回空列表', () {
       final widgets = module.buildDashboardWidgets;
       expect(widgets, isA<Function>());
     });
@@ -62,23 +60,11 @@ void main() {
       expect(summary.value, '2');
     });
 
-    test('dashboard 卡片顺序受配置控制', () async {
-      await module.configController!.setDashboardOrders(
-        quickCalcOrder: 1,
-        historyOrder: 0,
-      );
+    test('hasCustomEntryCard 受 dashboardQuickCalc 开关控制', () async {
+      expect(module.hasCustomEntryCard, isTrue);
 
-      final widgets = module.configController!.config.dashboardQuickCalc &&
-              module.configController!.config.dashboardHistory
-          ? [
-              const CalculatorDashboardHistoryCard(),
-              const CalculatorDashboardQuickCalcCard(),
-            ]
-          : [];
-
-      expect(widgets.length, 2);
-      expect(widgets.first, isA<CalculatorDashboardHistoryCard>());
-      expect(widgets.last, isA<CalculatorDashboardQuickCalcCard>());
+      await module.configController!.setDashboardQuickCalc(false);
+      expect(module.hasCustomEntryCard, isFalse);
     });
 
     test('exportData / importData 往返一致', () {

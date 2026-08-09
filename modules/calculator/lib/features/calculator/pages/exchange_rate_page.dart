@@ -4,6 +4,7 @@ import 'package:ametoolbox/shared/widgets/adaptive_button.dart';
 
 import '../providers/exchange_rate_controller.dart';
 import '../providers/exchange_rate_provider.dart';
+import '../providers/calculator_config_provider.dart';
 import '../services/exchange_rate_service.dart';
 import '../widgets/numeric_keypad.dart';
 
@@ -18,6 +19,7 @@ class ExchangeRatePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.watch(exchangeRateProvider);
     final colorScheme = Theme.of(context).colorScheme;
+    final showFullKeyboard = ref.watch(calculatorConfigProvider).config.showFullKeyboard;
 
     return Column(
       children: [
@@ -45,6 +47,7 @@ class ExchangeRatePage extends ConsumerWidget {
           ),
         ),
         NumericKeypad(
+          showFullKeyboard: showFullKeyboard,
           showRec: true,
           onKeyPressed: (value) => _handleKeyPress(ref, value),
         ),

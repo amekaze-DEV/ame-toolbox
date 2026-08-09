@@ -22,6 +22,19 @@ class HolidayDataController extends ChangeNotifier {
   /// 是否正在更新节假日数据。
   bool get isUpdating => _isUpdating;
 
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  /// 在未销毁时才通知监听者，避免异步回调在 dispose 后触发异常。
+  void _notify() {
+    if (!_disposed) notifyListeners();
+  }
+
   String? _lastError;
 
   /// 最近一次更新失败的错误信息；成功或从未更新时为 `null`。
@@ -87,7 +100,7 @@ class HolidayDataController extends ChangeNotifier {
       _lastError = e.toString();
     } finally {
       _isUpdating = false;
-      notifyListeners();
+      _notify();
     }
   }
 

@@ -1,16 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shift_assistant_module/core/storage/memory_storage_service.dart';
+import '../helpers/fake_storage_service.dart';
 import 'package:shift_assistant_module/features/shift_assistant/data/shift_config_repository.dart';
+import 'package:shift_assistant_module/features/shift_assistant/models/shift_config.dart';
 import 'package:shift_assistant_module/features/shift_assistant/providers/shift_config_controller.dart';
 
 void main() {
   group('ShiftConfigController', () {
-    late MemoryStorageService storage;
+    late FakeStorageService storage;
     late ShiftConfigRepository repository;
     late ShiftConfigController controller;
 
     setUp(() async {
-      storage = MemoryStorageService();
+      storage = FakeStorageService();
       await storage.initialize();
       repository = ShiftConfigRepository(storage: storage);
       controller = ShiftConfigController(repository: repository);
@@ -71,10 +72,26 @@ void main() {
       expect(loaded.findRotationById(rotation.id)?.name, '改名后');
     });
 
-    test('addRotationFromTemplate appends rotation and sets primary', () async {
-      await controller.addRotationFromTemplate(
-        templateId: 'template_3_2_single',
+    test('addRotation appends rotation and sets primary', () async {
+      await controller.addRotation(
         name: '三班两倒',
+        baseDate: DateTime(2026, 8, 1),
+        cycleDays: 3,
+        groups: const [
+          ShiftGroup(id: 'group_a', name: '甲班'),
+          ShiftGroup(id: 'group_b', name: '乙班'),
+          ShiftGroup(id: 'group_c', name: '丙班'),
+        ],
+        slots: const [
+          ShiftSlot(name: '白班', startTime: '08:00', endTime: '20:00'),
+          ShiftSlot(name: '夜班', startTime: '20:00', endTime: '08:00'),
+          ShiftSlot(name: '休息', isRest: true),
+        ],
+        assignments: const [
+          [0, 1, 2],
+          [1, 2, 0],
+          [2, 0, 1],
+        ],
         isPrimary: true,
       );
 

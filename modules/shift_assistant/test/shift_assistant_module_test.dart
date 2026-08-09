@@ -1,16 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shift_assistant_module/core/storage/memory_storage_service.dart';
+import 'helpers/fake_storage_service.dart';
 import 'package:shift_assistant_module/features/shift_assistant/models/shift_config.dart';
 import 'package:shift_assistant_module/features/shift_assistant/services/holiday_data_service.dart';
 import 'package:shift_assistant_module/features/shift_assistant/shift_assistant_module.dart';
 
 void main() {
   group('ShiftAssistantModule', () {
-    late MemoryStorageService storage;
+    late FakeStorageService storage;
     late ShiftAssistantModule module;
 
     setUp(() async {
-      storage = MemoryStorageService();
+      storage = FakeStorageService();
       await storage.initialize();
       module = ShiftAssistantModule(
         holidayDataService: _FakeHolidayDataService(),
@@ -26,7 +26,7 @@ void main() {
       final definition = module.definition;
       expect(definition.id, 'shift_assistant');
       expect(definition.name, '倒班助手');
-      expect(definition.iconName, 'calendar_month');
+      expect(definition.iconName, 'shift');
     });
 
     test('summary returns primary rotation name after initialization', () {
@@ -51,7 +51,7 @@ void main() {
           'id': 'rotation_new',
           'name': '新轮班',
           'baseDate': '2026-08-01T00:00:00.000',
-          'cycleCount': 1,
+          'cycleDays': 1,
           'groups': [
             {
               'id': 'group_new',
@@ -83,7 +83,7 @@ void main() {
           'id': 'rotation_a',
           'name': '甲轮班',
           'baseDate': '2026-08-01T00:00:00.000',
-          'cycleCount': 1,
+          'cycleDays': 3,
           'groups': [
             {
               'id': 'group_a',
@@ -121,7 +121,7 @@ void main() {
       configJson['primaryRotationId'] = 'rotation_a';
 
       // 将数据导入到一个全新模块实例，验证 summary 与再次导出一致。
-      final newStorage = MemoryStorageService();
+      final newStorage = FakeStorageService();
       await newStorage.initialize();
       final newModule = ShiftAssistantModule(
         holidayDataService: _FakeHolidayDataService(),

@@ -17,7 +17,7 @@ void main() {
         id: 'r1',
         name: 'A',
         baseDate: DateTime(2026, 8, 1),
-        cycleCount: 1,
+        cycleDays: 1,
         groups: const [ShiftGroup(id: 'g1', name: '一班')],
         slots: const [ShiftSlot(name: '白班')],
         assignments: const [[0]],
@@ -59,7 +59,7 @@ void main() {
       id: 'r1',
       name: '测试轮班',
       baseDate: _baseDate,
-      cycleCount: 2,
+      cycleDays: 4,
       groups: const [
         ShiftGroup(id: 'g1', name: '一班'),
         ShiftGroup(id: 'g2', name: '二班'),
@@ -74,7 +74,7 @@ void main() {
       ],
     );
 
-    test('cycleDays equals groupCount * cycleCount', () {
+    test('cycleDays returns configured value', () {
       expect(rotation.cycleDays, 4);
     });
 

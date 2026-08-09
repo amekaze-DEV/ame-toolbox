@@ -7,11 +7,13 @@ import 'package:ametoolbox/core/models/input_mode.dart';
 import 'package:ametoolbox/core/models/layout_mode.dart';
 import 'package:ametoolbox/core/models/sync_config.dart';
 import 'package:ametoolbox/core/modules/module_contract.dart';
+import 'package:ametoolbox/core/modules/module_controller.dart';
 import 'package:ametoolbox/core/providers/layout_provider.dart';
 import 'package:ametoolbox/core/providers/module_provider.dart';
 import 'package:ametoolbox/core/providers/sync_provider.dart';
 import 'package:ametoolbox/features/home/module_card_widget.dart';
 import 'package:ametoolbox/features/home/nav_item.dart';
+import 'package:ametoolbox/features/home/reorderable_masonry_sliver.dart';
 import 'package:ametoolbox/features/settings/settings_page.dart';
 import 'package:ametoolbox/shared/widgets/adaptive_button.dart';
 
@@ -121,85 +123,150 @@ void _openSettings(BuildContext context) {
   );
 }
 
-/// 主页内容：支持拖拽排序的模块卡片网格。
+/// 主页内容：支持拖拽排序的模块卡片。
+///
+/// 竖屏时单列（[LayoutMode.portrait]），横屏时双列高度自由的瀑布流
+/// （[LayoutMode.landscape]，使用 [SliverReorderableMasonry]）。
+/// 横竖屏各自维护独立的拖拽排序。
 class _HomeContent extends ConsumerWidget {
   const _HomeContent();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final layoutMode = ref.watch(layoutControllerProvider).layoutMode;
     final moduleController = ref.watch(moduleControllerProvider);
+    final layoutMode = ref.watch(layoutControllerProvider).layoutMode;
+
+    return layoutMode == LayoutMode.landscape
+        ? _buildLandscape(context, ref, moduleController)
+        : _buildPortrait(context, ref, moduleController);
+  }
+
+  /// 竖屏单列布局。
+  Widget _buildPortrait(
+    BuildContext context,
+    WidgetRef ref,
+    ModuleController moduleController,
+  ) {
     final enabledModules = moduleController.enabledModules;
     final dashboardWidgets = _collectDashboardWidgets(context, ref, enabledModules);
 
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: layoutMode == LayoutMode.portrait
-          ? CustomScrollView(
-              slivers: [
-                if (dashboardWidgets.isNotEmpty)
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: dashboardWidgets[index],
-                      ),
-                      childCount: dashboardWidgets.length,
-                    ),
-                  ),
-                SliverReorderableList(
-                  itemCount: enabledModules.length,
-                  proxyDecorator: _proxyDecorator,
-                  itemBuilder: (context, index) {
-                    final module = enabledModules[index];
-                    return _ModuleCardListItem(
-                      key: ValueKey(module.definition.id),
-                      module: module,
-                      onTap: () => _selectModule(ref, index + 1),
-                    );
-                  },
-                  onReorder: (oldIndex, newIndex) =>
-                      moduleController.reorderEnabledModules(oldIndex, newIndex),
+      child: CustomScrollView(
+        slivers: [
+          if (dashboardWidgets.isNotEmpty)
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: dashboardWidgets[index],
                 ),
-              ],
-            )
-          : CustomScrollView(
-              slivers: [
-                if (dashboardWidgets.isNotEmpty)
-                  SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 1.6,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => dashboardWidgets[index],
-                      childCount: dashboardWidgets.length,
-                    ),
-                  ),
-                SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 1.6,
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final module = enabledModules[index];
-                      return _DraggableModuleCard(
-                        key: ValueKey(module.definition.id),
-                        module: module,
-                        index: index,
-                        onTap: () => _selectModule(ref, index + 1),
-                      );
-                    },
-                    childCount: enabledModules.length,
-                  ),
-                ),
-              ],
+                childCount: dashboardWidgets.length,
+              ),
             ),
+          SliverReorderableList(
+            itemCount: enabledModules.length,
+            proxyDecorator: _proxyDecorator,
+            itemBuilder: (context, index) {
+              final module = enabledModules[index];
+              return _buildPortraitItem(
+                context,
+                ref,
+                moduleController,
+                module,
+                index,
+              );
+            },
+            onReorder: (oldIndex, newIndex) =>
+                moduleController.reorderEnabledModules(oldIndex, newIndex),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPortraitItem(
+    BuildContext context,
+    WidgetRef ref,
+    ModuleController moduleController,
+    ModuleContract module,
+    int index,
+  ) {
+    final entryCard = module.buildEntryCard(
+      context,
+      ref,
+      () => _selectModule(ref, index + 1),
+    );
+    return ReorderableDelayedDragStartListener(
+      key: ValueKey(module.definition.id),
+      index: index,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: entryCard ??
+            _ModuleCardListItem(
+              module: module,
+              onTap: () => _selectModule(ref, index + 1),
+            ),
+      ),
+    );
+  }
+
+  /// 横屏双列瀑布流布局。
+  Widget _buildLandscape(
+    BuildContext context,
+    WidgetRef ref,
+    ModuleController moduleController,
+  ) {
+    final enabledModules = moduleController.enabledModulesLandscape;
+    final dashboardWidgets = _collectDashboardWidgets(context, ref, enabledModules);
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: CustomScrollView(
+        slivers: [
+          if (dashboardWidgets.isNotEmpty)
+            SliverPadding(
+              padding: const EdgeInsets.only(bottom: 12),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: dashboardWidgets[index],
+                  ),
+                  childCount: dashboardWidgets.length,
+                ),
+              ),
+            ),
+          ReorderableMasonrySliver(
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            itemCount: enabledModules.length,
+            itemBuilder: (context, index) {
+              final module = enabledModules[index];
+              final entryCard = module.buildEntryCard(
+                context,
+                ref,
+                () => _selectModule(ref, index + 1),
+              );
+              return entryCard ??
+                  _ModuleCardListItem(
+                    module: module,
+                    onTap: () => _selectModule(ref, index + 1),
+                  );
+            },
+            feedbackBuilder: (context, index) =>
+                _buildLandscapeDragFeedback(context, enabledModules[index]),
+            placeholderBuilder: (context, index) =>
+                _buildLandscapeDragPlaceholder(context, enabledModules[index]),
+            onReorder: (oldIndex, newIndex) =>
+                moduleController.reorderEnabledModulesLandscape(
+              oldIndex,
+              newIndex,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -213,6 +280,60 @@ class _HomeContent extends ConsumerWidget {
       widgets.addAll(module.buildDashboardWidgets(context, ref));
     }
     return widgets;
+  }
+
+  /// 横屏拖拽时跟随指针的反馈组件，外观与真实卡片保持一致，但不含交互控件，
+  /// 避免在 Overlay 中重建 TextField/Provider 导致卡死。
+  Widget _buildLandscapeDragFeedback(
+    BuildContext context,
+    ModuleContract module,
+  ) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    // 左侧导航栏 80 + 左右内边距 16*2 + 列间距 12，再均分为两列。
+    final tileWidth = ((screenWidth - 80 - 32 - 12) / 2).clamp(200.0, 600.0);
+
+    if (module.definition.id == 'calculator') {
+      return SizedBox(
+        width: tileWidth,
+        child: _CalculatorDragFeedbackCard(),
+      );
+    }
+
+    return SizedBox(
+      width: tileWidth,
+      child: ModuleCard(
+        iconName: module.definition.iconName,
+        name: module.definition.name,
+        summary: module.summary,
+        onTap: () {},
+      ),
+    );
+  }
+
+  /// 横屏拖拽期间原位置显示的占位组件，高度与真实卡片接近，保持瀑布流稳定。
+  Widget _buildLandscapeDragPlaceholder(
+    BuildContext context,
+    ModuleContract module,
+  ) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final tileWidth = ((screenWidth - 80 - 32 - 12) / 2).clamp(200.0, 600.0);
+
+    if (module.definition.id == 'calculator') {
+      return SizedBox(
+        width: tileWidth,
+        child: _CalculatorDragFeedbackCard(),
+      );
+    }
+
+    return SizedBox(
+      width: tileWidth,
+      child: ModuleCard(
+        iconName: module.definition.iconName,
+        name: module.definition.name,
+        summary: module.summary,
+        onTap: () {},
+      ),
+    );
   }
 
   Widget _proxyDecorator(
@@ -241,10 +362,101 @@ class _HomeContent extends ConsumerWidget {
   }
 }
 
+/// 多功能计算器横屏拖拽时的静态视觉反馈卡。
+///
+/// 与真实快速计算卡片保持相同的布局结构（标题、输入框、结果、软键盘、
+/// 最近计算标题），但使用静态容器替代 TextField 与 ActionChip，不含任何
+/// Riverpod 引用或交互状态，因此可以安全地渲染在 Overlay 中而不会卡死。
+class _CalculatorDragFeedbackCard extends StatelessWidget {
+  const _CalculatorDragFeedbackCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    const operators = ['+', '-', '×', '÷', '(', ')', 'C', '='];
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.calculate_outlined,
+                  color: colorScheme.primary,
+                  size: 26,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '多功能计算器',
+                    style: textTheme.titleMedium,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              ' ',
+              style: textTheme.headlineSmall?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final op in operators)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: colorScheme.outline),
+                    ),
+                    child: Text(
+                      op,
+                      style: textTheme.labelLarge,
+                    ),
+                  ),
+              ],
+            ),
+            const Divider(height: 24),
+            Text(
+              '最近计算',
+              style: textTheme.titleSmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// 竖屏列表中的可拖拽模块卡片项。
 class _ModuleCardListItem extends StatelessWidget {
   const _ModuleCardListItem({
-    super.key,
     required this.module,
     required this.onTap,
   });
@@ -262,58 +474,6 @@ class _ModuleCardListItem extends StatelessWidget {
         summary: module.summary,
         onTap: onTap,
       ),
-    );
-  }
-}
-
-/// 横屏网格中的可拖拽模块卡片项。
-class _DraggableModuleCard extends ConsumerWidget {
-  const _DraggableModuleCard({
-    super.key,
-    required this.module,
-    required this.index,
-    required this.onTap,
-  });
-
-  final ModuleContract module;
-  final int index;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final moduleController = ref.read(moduleControllerProvider);
-    final card = ModuleCard(
-      iconName: module.definition.iconName,
-      name: module.definition.name,
-      summary: module.summary,
-      onTap: onTap,
-    );
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Draggable<int>(
-          data: index,
-          feedback: Material(
-            elevation: 6,
-            borderRadius: BorderRadius.circular(12),
-            child: SizedBox(
-              width: constraints.maxWidth,
-              height: constraints.maxHeight,
-              child: card,
-            ),
-          ),
-          childWhenDragging: Opacity(
-            opacity: 0.3,
-            child: card,
-          ),
-          child: DragTarget<int>(
-            onWillAcceptWithDetails: (details) => details.data != index,
-            onAcceptWithDetails: (details) =>
-                moduleController.reorderEnabledModules(details.data, index),
-            builder: (context, candidateData, rejectedData) => card,
-          ),
-        );
-      },
     );
   }
 }

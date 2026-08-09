@@ -64,7 +64,7 @@ class AppConstants {
   static const List<({String id, String name, String description, String iconName})>
       defaultModules = [
     (
-      id: 'shift',
+      id: 'shift_assistant',
       name: '倒班助手',
       description: '排班、班次提醒与工时统计',
       iconName: 'shift',

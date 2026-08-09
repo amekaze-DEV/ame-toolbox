@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ametoolbox/core/providers/storage_provider.dart';
 
@@ -16,10 +18,13 @@ final calculatorConfigRepositoryProvider = Provider<CalculatorConfigRepository>(
 
 /// 注入 [CalculatorConfigController]。
 ///
-/// 模块初始化时需调用 [CalculatorConfigController.load()] 从仓库加载 persisted 配置。
+/// 自动从 Hive 加载持久化配置，确保仪表盘卡片和设置页读取同一实例。
 final calculatorConfigProvider = ChangeNotifierProvider<CalculatorConfigController>(
   (ref) {
     final repository = ref.watch(calculatorConfigRepositoryProvider);
-    return CalculatorConfigController(repository: repository);
+    final controller = CalculatorConfigController(repository: repository);
+    // 异步加载持久化配置，加载完成后通知监听者
+    unawaited(controller.load());
+    return controller;
   },
 );

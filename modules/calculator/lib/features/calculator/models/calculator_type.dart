@@ -27,9 +27,9 @@ extension CalculatorTypeExtension on CalculatorType {
   String get displayName {
     switch (this) {
       case CalculatorType.scientific:
-        return '科学计算器';
+        return '通用计算';
       case CalculatorType.standardCubicToMass:
-        return '标准立方米-质量';
+        return '标立-质量';
       case CalculatorType.unitConverter:
         return '单位转换';
       case CalculatorType.geometry:
