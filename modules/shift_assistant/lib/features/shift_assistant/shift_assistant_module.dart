@@ -13,6 +13,7 @@ import 'pages/shift_assistant_settings_page.dart';
 import 'providers/holiday_data_controller.dart';
 import 'providers/shift_config_controller.dart';
 import 'services/holiday_data_service.dart';
+import 'widgets/shift_assistant_dashboard_quick_card.dart';
 
 /// 倒班助手模块。
 ///
@@ -51,7 +52,7 @@ class ShiftAssistantModule implements ModuleContract {
   }
 
   @override
-  bool get hasCustomEntryCard => false;
+  bool get hasCustomEntryCard => true;
 
   @override
   Widget? buildEntryCard(
@@ -59,14 +60,14 @@ class ShiftAssistantModule implements ModuleContract {
     WidgetRef ref,
     VoidCallback onOpenModule,
   ) =>
-      null;
+      ShiftAssistantDashboardQuickCard(onOpenModule: onOpenModule);
 
   @override
   ModuleSummary get summary {
     final config = _configController?.config ?? ShiftConfig.defaults();
-    final rotation = config.primaryRotation;
+    final rotation = config.selectedRotation;
     return ModuleSummary(
-      label: '主要轮班',
+      label: '我的轮班',
       value: rotation?.name ?? '-',
     );
   }

@@ -7,49 +7,68 @@ import 'package:ametoolbox/core/models/input_mode.dart';
 import '../helpers/fake_storage_service.dart';
 import 'package:shift_assistant_module/features/shift_assistant/data/shift_config_repository.dart';
 import 'package:shift_assistant_module/features/shift_assistant/models/shift_config.dart';
-import 'package:shift_assistant_module/features/shift_assistant/pages/month_calendar_view.dart';
 import 'package:shift_assistant_module/features/shift_assistant/providers/holiday_data_controller.dart';
 import 'package:shift_assistant_module/features/shift_assistant/providers/holiday_data_provider.dart';
 import 'package:shift_assistant_module/features/shift_assistant/providers/shift_config_controller.dart';
 import 'package:shift_assistant_module/features/shift_assistant/providers/shift_config_provider.dart';
 import 'package:shift_assistant_module/features/shift_assistant/services/holiday_data_service.dart';
+import 'package:shift_assistant_module/features/shift_assistant/widgets/shift_assistant_dashboard_quick_card.dart';
 
 void main() {
-  group('MonthCalendarView', () {
-    testWidgets('renders weekday header and group chips',
+  group('ShiftAssistantDashboardQuickCard', () {
+    testWidgets('renders date info and current rotation when no my team',
         (tester) async {
-      await _pumpCalendarView(tester, _configWithThreeGroups());
+      await _pumpQuickCard(tester, _defaultConfig());
 
-      expect(find.text('一'), findsOneWidget);
-      expect(find.text('甲班'), findsWidgets);
-      expect(find.text('乙班'), findsWidgets);
-      expect(find.text('丙班'), findsWidgets);
+      expect(find.text('倒班助手'), findsOneWidget);
+      expect(find.text('今日'), findsOneWidget);
+      expect(find.text('我的班组'), findsNothing);
+      expect(find.textContaining('当前轮班'), findsOneWidget);
+      expect(find.textContaining('一班'), findsWidgets);
     });
 
-    testWidgets('uses horizontal scrolling on narrow widths',
-        (tester) async {
-      await _pumpCalendarView(
-        tester,
-        _configWithThreeGroups(),
-        size: const Size(360, 600),
+    testWidgets('shows my team section when my team is set', (tester) async {
+      final config = _defaultConfig().copyWith(
+        myTeamRotationId: 'rotation_1',
+        myTeamGroupId: 'group_b',
       );
 
-      expect(tester.takeException(), isNull);
-      expect(find.byType(SingleChildScrollView), findsWidgets);
+      await _pumpQuickCard(tester, config);
+
+      expect(find.text('我的班组'), findsOneWidget);
+      expect(find.textContaining('二班'), findsWidgets);
+    });
+
+    testWidgets('shows empty rotation hint when no rotations', (tester) async {
+      await _pumpQuickCard(
+        tester,
+        const ShiftConfig(rotations: []),
+      );
+
+      expect(find.text('暂无轮班，请到设置页添加'), findsOneWidget);
+    });
+
+    testWidgets('tapping card triggers onOpenModule', (tester) async {
+      var opened = false;
+      await _pumpQuickCard(
+        tester,
+        _defaultConfig(),
+        onOpenModule: () => opened = true,
+      );
+
+      await tester.tap(find.text('倒班助手'));
+      await tester.pump();
+
+      expect(opened, true);
     });
   });
 }
 
-Future<void> _pumpCalendarView(
+Future<void> _pumpQuickCard(
   WidgetTester tester,
   ShiftConfig config, {
-  InputMode inputMode = InputMode.mouse,
-  Size? size,
+  VoidCallback onOpenModule = _noOp,
 }) async {
-  if (size != null) {
-    await tester.binding.setSurfaceSize(size);
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-  }
   final storage = FakeStorageService();
   await storage.initialize();
 
@@ -72,13 +91,15 @@ Future<void> _pumpCalendarView(
         holidayDataProvider.overrideWith((ref) => holidayController),
       ],
       child: InputModeScope(
-        mode: inputMode,
+        mode: InputMode.mouse,
         child: MaterialApp(
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
             useMaterial3: true,
           ),
-          home: const Scaffold(body: MonthCalendarView()),
+          home: Scaffold(
+            body: ShiftAssistantDashboardQuickCard(onOpenModule: onOpenModule),
+          ),
         ),
       ),
     ),
@@ -87,7 +108,9 @@ Future<void> _pumpCalendarView(
   await tester.pumpAndSettle();
 }
 
-ShiftConfig _configWithThreeGroups() => ShiftConfig(
+void _noOp() {}
+
+ShiftConfig _defaultConfig() => ShiftConfig(
       rotations: [
         ShiftRotation(
           id: 'rotation_1',
@@ -95,19 +118,17 @@ ShiftConfig _configWithThreeGroups() => ShiftConfig(
           baseDate: DateTime(2026, 8, 1),
           cycleDays: 3,
           groups: const [
-            ShiftGroup(id: 'group_a', name: '甲班'),
-            ShiftGroup(id: 'group_b', name: '乙班'),
-            ShiftGroup(id: 'group_c', name: '丙班'),
+            ShiftGroup(id: 'group_a', name: '一班'),
+            ShiftGroup(id: 'group_b', name: '二班'),
           ],
           slots: const [
             ShiftSlot(name: '白班'),
             ShiftSlot(name: '夜班'),
-            ShiftSlot(name: '休息'),
+            ShiftSlot(name: '休息', isRest: true),
           ],
           assignments: const [
             [0, 1, 2],
             [1, 2, 0],
-            [2, 0, 1],
           ],
         ),
       ],

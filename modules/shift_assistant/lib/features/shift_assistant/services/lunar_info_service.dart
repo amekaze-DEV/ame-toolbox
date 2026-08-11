@@ -29,6 +29,14 @@ class LunarInfoService {
     return lunar.getFestivals();
   }
 
+  /// 获取指定日期的公历节日列表（如“国庆节”、“教师节”、“母亲节”）。
+  ///
+  /// 覆盖固定日期节日与“第几个星期几”节日（父亲节、母亲节等）。
+  List<String> getSolarFestivals(DateTime date) {
+    final solar = Solar.fromDate(date);
+    return solar.getFestivals();
+  }
+
   /// 获取指定日期的干支纪年。
   String getYearGanZhi(DateTime date) {
     final lunar = Lunar.fromDate(date);

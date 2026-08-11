@@ -43,15 +43,17 @@ void main() {
       expect(find.text('夜班轮班'), findsOneWidget);
     });
 
-    testWidgets('sets primary rotation via star button', (tester) async {
-      await _pumpSettingsPage(tester, _configWithTwoRotations());
+    testWidgets('renders my team section and opens dialog', (tester) async {
+      await _pumpSettingsPage(tester, _defaultConfig());
 
-      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.text('我的班组'), findsOneWidget);
+      expect(find.text('未设置我的班组'), findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.star_border));
+      await tester.tap(find.widgetWithText(AdaptiveButton, '设置'));
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.text('设置我的班组'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('opens edit rotation dialog without overflow',
@@ -140,46 +142,6 @@ Future<void> _pumpSettingsPage(
 }
 
 ShiftConfig _defaultConfig() => ShiftConfig.defaults();
-
-ShiftConfig _configWithTwoRotations() => ShiftConfig(
-      rotations: [
-        ShiftRotation(
-          id: 'rotation_a',
-          name: '甲轮班',
-          baseDate: DateTime(2026, 8, 1),
-          cycleDays: 2,
-          groups: const [
-            ShiftGroup(id: 'group_a', name: '甲班'),
-          ],
-          slots: const [
-            ShiftSlot(name: '白班'),
-            ShiftSlot(name: '休息'),
-          ],
-          assignments: const [
-            [0, 1],
-          ],
-          isPrimary: true,
-        ),
-        ShiftRotation(
-          id: 'rotation_b',
-          name: '乙轮班',
-          baseDate: DateTime(2026, 8, 1),
-          cycleDays: 2,
-          groups: const [
-            ShiftGroup(id: 'group_b', name: '乙班'),
-          ],
-          slots: const [
-            ShiftSlot(name: '夜班'),
-            ShiftSlot(name: '休息'),
-          ],
-          assignments: const [
-            [0, 1],
-          ],
-          isPrimary: false,
-        ),
-      ],
-      primaryRotationId: 'rotation_a',
-    );
 
 /// 不发起网络请求的节假日数据服务占位实现。
 class _NoOpHolidayDataService extends HolidayDataService {

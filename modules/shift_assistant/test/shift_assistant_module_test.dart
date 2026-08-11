@@ -29,9 +29,9 @@ void main() {
       expect(definition.iconName, 'shift');
     });
 
-    test('summary returns primary rotation name after initialization', () {
+    test('summary returns selected rotation name after initialization', () {
       final summary = module.summary;
-      expect(summary.label, '主要轮班');
+      expect(summary.label, '我的轮班');
       expect(summary.value, '我的轮班');
     });
 
@@ -63,10 +63,9 @@ void main() {
             {'name': '白班', 'startTime': null, 'endTime': null, 'isRest': false},
           ],
           'assignments': [[0]],
-          'isPrimary': true,
         },
       ];
-      configJson['primaryRotationId'] = 'rotation_new';
+      configJson['lastViewedRotationId'] = 'rotation_new';
 
       module.importData({'module_shift_assistant_config': configJson});
       expect(module.summary.value, '新轮班');
@@ -115,10 +114,9 @@ void main() {
             [0, 1, 2],
             [1, 2, 0],
           ],
-          'isPrimary': true,
         },
       ];
-      configJson['primaryRotationId'] = 'rotation_a';
+      configJson['lastViewedRotationId'] = 'rotation_a';
 
       // 将数据导入到一个全新模块实例，验证 summary 与再次导出一致。
       final newStorage = FakeStorageService();

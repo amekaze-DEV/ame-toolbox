@@ -3,16 +3,15 @@ import 'package:shift_assistant_module/features/shift_assistant/models/shift_con
 
 void main() {
   group('ShiftConfig', () {
-    test('defaults creates primary rotation', () {
+    test('defaults selects default rotation', () {
       final config = ShiftConfig.defaults();
 
       expect(config.rotations.length, 1);
-      expect(config.primaryRotationId, isNotNull);
-      expect(config.primaryRotation, isNotNull);
-      expect(config.primaryRotation!.isPrimary, true);
+      expect(config.lastViewedRotationId, isNotNull);
+      expect(config.selectedRotation, isNotNull);
     });
 
-    test('orderedRotations places primary first', () {
+    test('selectedRotation prefers lastViewedRotationId', () {
       final first = ShiftRotation(
         id: 'r1',
         name: 'A',
@@ -22,13 +21,45 @@ void main() {
         slots: const [ShiftSlot(name: '白班')],
         assignments: const [[0]],
       );
-      final second = first.copyWith(id: 'r2', name: 'B', isPrimary: true);
+      final second = first.copyWith(id: 'r2', name: 'B');
       final config = ShiftConfig(
         rotations: [first, second],
-        primaryRotationId: 'r2',
+        lastViewedRotationId: 'r2',
       );
 
-      expect(config.orderedRotations.first.id, 'r2');
+      expect(config.selectedRotation!.id, 'r2');
+
+      final fallback = ShiftConfig(rotations: [first, second]);
+      expect(fallback.selectedRotation!.id, 'r1');
+    });
+
+    test('myTeamGroup resolves group from rotation', () {
+      final first = ShiftRotation(
+        id: 'r1',
+        name: 'A',
+        baseDate: DateTime(2026, 8, 1),
+        cycleDays: 1,
+        groups: const [
+          ShiftGroup(id: 'g1', name: '一班'),
+          ShiftGroup(id: 'g2', name: '二班'),
+        ],
+        slots: const [ShiftSlot(name: '白班')],
+        assignments: const [[0], [0]],
+      );
+      final config = ShiftConfig(
+        rotations: [first],
+        myTeamRotationId: 'r1',
+        myTeamGroupId: 'g2',
+      );
+
+      expect(config.myTeamGroup?.name, '二班');
+
+      final invalid = ShiftConfig(
+        rotations: [first],
+        myTeamRotationId: 'r1',
+        myTeamGroupId: 'missing',
+      );
+      expect(invalid.myTeamGroup, isNull);
     });
 
     test('findRotationById returns matching rotation', () {
@@ -45,7 +76,9 @@ void main() {
       final restored = ShiftConfig.fromJson(json);
 
       expect(restored.rotations.length, original.rotations.length);
-      expect(restored.primaryRotationId, original.primaryRotationId);
+      expect(restored.lastViewedRotationId, original.lastViewedRotationId);
+      expect(restored.myTeamRotationId, original.myTeamRotationId);
+      expect(restored.myTeamGroupId, original.myTeamGroupId);
       expect(restored.rotations.first.name, original.rotations.first.name);
       expect(
         restored.rotations.first.assignments,

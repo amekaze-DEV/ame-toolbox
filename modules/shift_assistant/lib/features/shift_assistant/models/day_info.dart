@@ -15,6 +15,9 @@ class DayInfo {
   /// 节气，如“立秋”。为 null 表示当日无节气。
   final String? solarTerm;
 
+  /// 公历节日列表，如“国庆节”、“教师节”、“母亲节”。空列表表示当日无节日。
+  final List<String> solarFestivals;
+
   /// 节假日/调休信息。为 null 表示当日无特殊节假日。
   final HolidayInfo? holiday;
 
@@ -28,6 +31,7 @@ class DayInfo {
     required this.date,
     this.lunarDate = '',
     this.solarTerm,
+    this.solarFestivals = const [],
     this.holiday,
     this.rotationId,
     this.groupShifts = const {},
@@ -40,6 +44,7 @@ class DayInfo {
     DateTime? date,
     String? lunarDate,
     String? solarTerm,
+    List<String>? solarFestivals,
     HolidayInfo? holiday,
     String? rotationId,
     Map<String, ShiftSlot>? groupShifts,
@@ -48,6 +53,7 @@ class DayInfo {
         date: date ?? this.date,
         lunarDate: lunarDate ?? this.lunarDate,
         solarTerm: solarTerm ?? this.solarTerm,
+        solarFestivals: solarFestivals ?? this.solarFestivals,
         holiday: holiday ?? this.holiday,
         rotationId: rotationId ?? this.rotationId,
         groupShifts: groupShifts ?? this.groupShifts,

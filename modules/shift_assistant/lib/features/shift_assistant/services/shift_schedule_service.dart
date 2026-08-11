@@ -32,13 +32,14 @@ class ShiftScheduleService {
 
   /// 为 [date] 聚合指定轮班的 [DayInfo]。
   ///
-  /// [lunarDate]、[solarTerm]、[holiday] 由 [LunarInfoService] 与
-  /// [HolidayDataController] 提供；未传入时保持为空。
+  /// [lunarDate]、[solarTerm]、[solarFestivals]、[holiday] 由 [LunarInfoService]
+  /// 与 [HolidayDataController] 提供；未传入时保持为空。
   DayInfo buildDayInfo(
     ShiftRotation rotation,
     DateTime date, {
     String lunarDate = '',
     String? solarTerm,
+    List<String> solarFestivals = const [],
     HolidayInfo? holiday,
   }) {
     final normalized = dateOnly(date);
@@ -48,6 +49,7 @@ class ShiftScheduleService {
       date: normalized,
       lunarDate: lunarDate,
       solarTerm: solarTerm,
+      solarFestivals: solarFestivals,
       holiday: holiday,
       rotationId: rotation.id,
       groupShifts: shifts,

@@ -36,54 +36,50 @@ class ShiftConfigController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 将 [rotationId] 设为主要轮班，并取消其他轮班的主要状态。
-  Future<void> setPrimaryRotation(String rotationId) async {
-    if (_config.primaryRotationId == rotationId &&
-        _config.rotations.every((r) => r.isPrimary == (r.id == rotationId))) {
+  /// 记录最近查看的轮班，作为日历下次默认显示的轮班。
+  Future<void> setLastViewedRotation(String rotationId) async {
+    if (_config.lastViewedRotationId == rotationId) return;
+    await updateConfig(_config.copyWith(lastViewedRotationId: rotationId));
+  }
+
+  /// 设置我的班组（可选）。[rotationId] 与 [groupId] 同时为空时等价于清除。
+  Future<void> setMyTeam(String? rotationId, String? groupId) async {
+    if (rotationId == null || groupId == null) {
+      if (!_hasMyTeam) return;
+      await updateConfig(_config.copyWith(clearMyTeam: true));
       return;
     }
-
-    final updatedRotations = _config.rotations
-        .map((r) => r.copyWith(isPrimary: r.id == rotationId))
-        .toList();
-
+    if (_config.myTeamRotationId == rotationId &&
+        _config.myTeamGroupId == groupId) {
+      return;
+    }
     await updateConfig(
-      _config.copyWith(
-        rotations: updatedRotations,
-        primaryRotationId: rotationId,
-      ),
+      _config.copyWith(myTeamRotationId: rotationId, myTeamGroupId: groupId),
     );
   }
 
-  /// 取消主要轮班设置。
-  Future<void> clearPrimaryRotation() async {
-    if (_config.primaryRotationId == null &&
-        _config.rotations.every((r) => !r.isPrimary)) {
-      return;
-    }
-
-    final updatedRotations = _config.rotations
-        .map((r) => r.copyWith(isPrimary: false))
-        .toList();
-
-    await updateConfig(
-      _config.copyWith(
-        rotations: updatedRotations,
-        clearPrimaryRotationId: true,
-      ),
-    );
+  /// 清除我的班组设置。
+  Future<void> clearMyTeam() async {
+    if (!_hasMyTeam) return;
+    await updateConfig(_config.copyWith(clearMyTeam: true));
   }
+
+  bool get _hasMyTeam =>
+      _config.myTeamRotationId != null || _config.myTeamGroupId != null;
 
   /// 删除指定轮班。
   Future<void> deleteRotation(String rotationId) async {
-    final wasPrimary = _config.primaryRotationId == rotationId;
     final updatedRotations =
         _config.rotations.where((r) => r.id != rotationId).toList();
+
+    final clearLastViewed = _config.lastViewedRotationId == rotationId;
+    final clearMyTeam = _config.myTeamRotationId == rotationId;
 
     await updateConfig(
       _config.copyWith(
         rotations: updatedRotations,
-        clearPrimaryRotationId: wasPrimary,
+        clearLastViewedRotationId: clearLastViewed,
+        clearMyTeam: clearMyTeam,
       ),
     );
   }
@@ -115,7 +111,6 @@ class ShiftConfigController extends ChangeNotifier {
     required List<ShiftGroup> groups,
     required List<ShiftSlot> slots,
     required List<List<int>> assignments,
-    bool isPrimary = false,
   }) async {
     final rotation = ShiftRotation(
       id: _generateId('rotation'),
@@ -129,10 +124,6 @@ class ShiftConfigController extends ChangeNotifier {
 
     final updatedRotations = [..._config.rotations, rotation];
     await updateConfig(_config.copyWith(rotations: updatedRotations));
-
-    if (isPrimary) {
-      await setPrimaryRotation(rotation.id);
-    }
   }
 
   /// 生成唯一 ID。

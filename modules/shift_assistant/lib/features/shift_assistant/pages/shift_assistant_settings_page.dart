@@ -36,7 +36,6 @@ class ShiftAssistantSettingsPage extends ConsumerWidget {
           const SizedBox(height: 8),
           _RotationList(
             config: configController.config,
-            onSetPrimary: configNotifier.setPrimaryRotation,
             onEdit: (rotation) => _showEditRotationDialog(
               context,
               configNotifier,
@@ -44,6 +43,16 @@ class ShiftAssistantSettingsPage extends ConsumerWidget {
             ),
             onDelete: configNotifier.deleteRotation,
           ),
+          const SizedBox(height: 24),
+          _SectionHeader(
+            title: '我的班组',
+            actionLabel: '设置',
+            onAction: configController.config.rotations.isEmpty
+                ? null
+                : () => _showMyTeamDialog(context, configNotifier),
+          ),
+          const SizedBox(height: 8),
+          _MyTeamCard(config: configController.config),
           const SizedBox(height: 24),
           _SectionHeader(
             title: '节假日数据',
@@ -65,10 +74,7 @@ class ShiftAssistantSettingsPage extends ConsumerWidget {
   ) async {
     final result = await showDialog<_RotationConfigResult>(
       context: context,
-      builder: (context) => const _RotationConfigDialog(
-        title: '添加轮班',
-        showPrimaryOption: true,
-      ),
+      builder: (context) => const _RotationConfigDialog(title: '添加轮班'),
     );
     if (result == null) return;
     await notifier.addRotation(
@@ -78,7 +84,6 @@ class ShiftAssistantSettingsPage extends ConsumerWidget {
       groups: result.groups,
       slots: result.slots,
       assignments: result.assignments,
-      isPrimary: result.isPrimary,
     );
   }
 
@@ -106,6 +111,23 @@ class ShiftAssistantSettingsPage extends ConsumerWidget {
     );
 
     await notifier.updateRotation(updated);
+  }
+
+  Future<void> _showMyTeamDialog(
+    BuildContext context,
+    ShiftConfigController notifier,
+  ) async {
+    final result = await showDialog<_MyTeamResult>(
+      context: context,
+      builder: (context) => _MyTeamDialog(config: notifier.config),
+    );
+    if (result == null) return;
+
+    if (result.clear) {
+      await notifier.clearMyTeam();
+    } else {
+      await notifier.setMyTeam(result.rotationId, result.groupId);
+    }
   }
 }
 
@@ -146,19 +168,17 @@ class _SectionHeader extends StatelessWidget {
 class _RotationList extends StatelessWidget {
   const _RotationList({
     required this.config,
-    required this.onSetPrimary,
     required this.onEdit,
     required this.onDelete,
   });
 
   final ShiftConfig config;
-  final ValueChanged<String> onSetPrimary;
   final ValueChanged<ShiftRotation> onEdit;
   final ValueChanged<String> onDelete;
 
   @override
   Widget build(BuildContext context) {
-    final rotations = config.orderedRotations;
+    final rotations = config.rotations;
     if (rotations.isEmpty) {
       return const _EmptyHint(text: '暂无轮班，点击右上角添加');
     }
@@ -185,16 +205,6 @@ class _RotationList extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 AdaptiveIconButton(
-                  icon: Icon(
-                    rotation.isPrimary ? Icons.star : Icons.star_border,
-                  ),
-                  tooltip:
-                      rotation.isPrimary ? '主要轮班' : '设为主要轮班',
-                  onPressed: rotation.isPrimary
-                      ? null
-                      : () => onSetPrimary(rotation.id),
-                ),
-                AdaptiveIconButton(
                   icon: const Icon(Icons.edit),
                   tooltip: '编辑',
                   onPressed: () => onEdit(rotation),
@@ -209,6 +219,186 @@ class _RotationList extends StatelessWidget {
           );
         }).toList(),
       ),
+    );
+  }
+}
+
+/// 我的班组状态卡片。
+class _MyTeamCard extends StatelessWidget {
+  const _MyTeamCard({required this.config});
+
+  final ShiftConfig config;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    final team = config.myTeamGroup;
+
+    final rotation = team == null
+        ? null
+        : config.findRotationById(config.myTeamRotationId!);
+
+    final String title;
+    final IconData icon;
+    if (team == null) {
+      title = '未设置我的班组';
+      icon = Icons.person_outline;
+    } else {
+      title = '${rotation?.name ?? '未知轮班'} · ${team.name}';
+      icon = Icons.person;
+    }
+
+    return Card(
+      child: ListTile(
+        leading: Icon(icon, color: colorScheme.primary),
+        title: Text(title, style: textTheme.bodyLarge),
+      ),
+    );
+  }
+}
+
+/// 「设置我的班组」对话框的结果。
+class _MyTeamResult {
+  const _MyTeamResult({this.rotationId, this.groupId, this.clear = false});
+
+  /// 选中的轮班 ID。
+  final String? rotationId;
+
+  /// 选中的班组 ID。
+  final String? groupId;
+
+  /// 为 true 表示用户选择清除我的班组。
+  final bool clear;
+}
+
+/// 「设置我的班组」对话框：选择轮班与其中的班组，或选择不设置。
+class _MyTeamDialog extends StatefulWidget {
+  const _MyTeamDialog({required this.config});
+
+  final ShiftConfig config;
+
+  @override
+  State<_MyTeamDialog> createState() => _MyTeamDialogState();
+}
+
+class _MyTeamDialogState extends State<_MyTeamDialog> {
+  late String? _rotationId;
+  late String? _groupId;
+
+  @override
+  void initState() {
+    super.initState();
+    _rotationId = widget.config.myTeamRotationId;
+    // 若当前设置引用失效，则回退到第一个轮班。
+    if (_rotationId == null ||
+        widget.config.findRotationById(_rotationId!) == null) {
+      _rotationId =
+          widget.config.rotations.isEmpty ? null : widget.config.rotations.first.id;
+    }
+    _groupId = widget.config.myTeamGroupId;
+    if (_groupId != null && _groupsOf(_rotationId).every((g) => g.id != _groupId)) {
+      _groupId = null;
+    }
+  }
+
+  List<ShiftGroup> _groupsOf(String? rotationId) {
+    final rotation =
+        rotationId == null ? null : widget.config.findRotationById(rotationId);
+    return rotation?.groups ?? const [];
+  }
+
+  bool get _hasSelection => _rotationId != null && _groupId != null;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final groups = _groupsOf(_rotationId);
+
+    return AlertDialog(
+      title: const Text('设置我的班组'),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 320, maxWidth: 480),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('选择轮班', style: textTheme.titleSmall),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String?>(
+              initialValue: _rotationId,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+              ),
+              items: widget.config.rotations.map((r) {
+                return DropdownMenuItem(
+                  value: r.id,
+                  child: Text(
+                    r.name,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _rotationId = value;
+                  _groupId = null;
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+            Text('选择班组', style: textTheme.titleSmall),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String?>(
+              initialValue: _groupId,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+              ),
+              hint: const Text('选择班组'),
+              items: groups.map((g) {
+                return DropdownMenuItem(
+                  value: g.id,
+                  child: Text(g.name, overflow: TextOverflow.ellipsis),
+                );
+              }).toList(),
+              onChanged: (value) => setState(() => _groupId = value),
+            ),
+            const SizedBox(height: 8),
+            if (_hasSelection)
+              Text(
+                '已选择：${groups.firstWhere((g) => g.id == _groupId).name}',
+                style: textTheme.bodySmall,
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        AdaptiveButton(
+          onPressed: () => Navigator.of(context).pop(),
+          label: '取消',
+          variant: AdaptiveButtonVariant.text,
+        ),
+        if (_hasSelection)
+          AdaptiveButton(
+            onPressed: () => Navigator.of(context).pop(
+              _MyTeamResult(
+                rotationId: _rotationId,
+                groupId: _groupId,
+              ),
+            ),
+            label: '保存',
+            variant: AdaptiveButtonVariant.text,
+          ),
+        AdaptiveButton(
+          onPressed: () => Navigator.of(context).pop(
+            const _MyTeamResult(clear: true),
+          ),
+          label: '清除',
+          variant: AdaptiveButtonVariant.text,
+        ),
+      ],
     );
   }
 }
@@ -291,7 +481,6 @@ class _RotationConfigResult {
     required this.groups,
     required this.slots,
     required this.assignments,
-    this.isPrimary = false,
   });
 
   final String name;
@@ -300,7 +489,6 @@ class _RotationConfigResult {
   final List<ShiftGroup> groups;
   final List<ShiftSlot> slots;
   final List<List<int>> assignments;
-  final bool isPrimary;
 }
 
 /// 添加 / 编辑轮班统一对话框。
@@ -312,12 +500,10 @@ class _RotationConfigDialog extends StatefulWidget {
   const _RotationConfigDialog({
     required this.title,
     this.initialRotation,
-    this.showPrimaryOption = false,
   });
 
   final String title;
   final ShiftRotation? initialRotation;
-  final bool showPrimaryOption;
 
   @override
   State<_RotationConfigDialog> createState() => _RotationConfigDialogState();
@@ -331,7 +517,6 @@ class _RotationConfigDialogState extends State<_RotationConfigDialog> {
   late DateTime _baseDate;
   late int _cycleDays;
   late List<List<int>> _assignments;
-  bool _isPrimary = false;
   int _groupSeq = 0;
 
   @override
@@ -354,7 +539,6 @@ class _RotationConfigDialogState extends State<_RotationConfigDialog> {
       _assignments = rotation.assignments
           .map((row) => List<int>.of(row))
           .toList();
-      _isPrimary = rotation.isPrimary;
       _groupSeq = rotation.groups.length;
     } else {
       _groupControllers =
@@ -446,18 +630,6 @@ class _RotationConfigDialogState extends State<_RotationConfigDialog> {
               ),
               const SizedBox(height: 8),
               _buildAssignmentMatrix(),
-              if (widget.showPrimaryOption) ...[
-                const SizedBox(height: 8),
-                CheckboxListTile(
-                  value: _isPrimary,
-                  onChanged: (value) => setState(() {
-                    _isPrimary = value ?? false;
-                  }),
-                  title: const Text('设为主要轮班'),
-                  controlAffinity: ListTileControlAffinity.leading,
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ],
             ],
           ),
         ),
@@ -757,7 +929,6 @@ class _RotationConfigDialogState extends State<_RotationConfigDialog> {
         groups: _groups,
         slots: _slots,
         assignments: _assignments,
-        isPrimary: _isPrimary,
       ),
     );
   }

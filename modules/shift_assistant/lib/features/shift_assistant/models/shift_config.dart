@@ -2,13 +2,19 @@ import 'dart:math';
 
 /// 倒班助手模块配置。
 ///
-/// 保存轮班列表、主要轮班、节假日缓存等。
+/// 保存轮班列表、我的班组、最近查看的轮班、节假日缓存等。
 class ShiftConfig {
   /// 轮班列表。
   final List<ShiftRotation> rotations;
 
-  /// 主要轮班 ID；为 null 时不设置主要轮班。
-  final String? primaryRotationId;
+  /// 最近查看的轮班 ID；日历默认显示该轮班，为 null 时显示第一个轮班。
+  final String? lastViewedRotationId;
+
+  /// 我的班组所在轮班 ID；为 null 表示未设置我的班组。
+  final String? myTeamRotationId;
+
+  /// 我的班组 ID（在 [myTeamRotationId] 轮班内）；为 null 表示未设置我的班组。
+  final String? myTeamGroupId;
 
   /// 节假日缓存，key 为 yyyy-MM-dd。
   final Map<String, HolidayInfo> holidayCache;
@@ -18,7 +24,9 @@ class ShiftConfig {
 
   const ShiftConfig({
     required this.rotations,
-    this.primaryRotationId,
+    this.lastViewedRotationId,
+    this.myTeamRotationId,
+    this.myTeamGroupId,
     this.holidayCache = const {},
     this.holidaysLastUpdated,
   });
@@ -48,28 +56,15 @@ class ShiftConfig {
         [2, 3, 0, 1],
         [1, 2, 3, 0],
       ],
-      isPrimary: true,
     );
 
     return ShiftConfig(
       rotations: [rotation],
-      primaryRotationId: 'rotation_default',
+      lastViewedRotationId: 'rotation_default',
     );
   }
 
   static final _defaultBaseDate = DateTime(2026, 8, 1);
-
-  /// 获取按渲染顺序排列的轮班：主要轮班置顶，其余按创建顺序。
-  List<ShiftRotation> get orderedRotations {
-    final primary = primaryRotationId;
-    final primaryRotation =
-        primary == null ? null : _findRotationById(primary);
-
-    final others = rotations.where((r) => r.id != primary).toList();
-
-    if (primaryRotation == null) return others;
-    return [primaryRotation, ...others];
-  }
 
   /// 根据 ID 查找轮班。
   ShiftRotation? findRotationById(String id) => _findRotationById(id);
@@ -81,26 +76,51 @@ class ShiftConfig {
     return null;
   }
 
-  /// 获取主要轮班；未设置时返回第一个轮班（若存在）。
-  ShiftRotation? get primaryRotation {
-    final id = primaryRotationId;
-    if (id != null) return _findRotationById(id);
+  /// 当前选中的轮班：优先 [lastViewedRotationId]，否则返回第一个轮班（若存在）。
+  ShiftRotation? get selectedRotation {
+    final id = lastViewedRotationId;
+    if (id != null) {
+      final rotation = _findRotationById(id);
+      if (rotation != null) return rotation;
+    }
     return rotations.isEmpty ? null : rotations.first;
+  }
+
+  /// 我的班组（ShiftGroup）；未设置或引用失效时返回 null。
+  ShiftGroup? get myTeamGroup {
+    final rotationId = myTeamRotationId;
+    final groupId = myTeamGroupId;
+    if (rotationId == null || groupId == null) return null;
+    final rotation = _findRotationById(rotationId);
+    if (rotation == null) return null;
+    for (final group in rotation.groups) {
+      if (group.id == groupId) return group;
+    }
+    return null;
   }
 
   ShiftConfig copyWith({
     List<ShiftRotation>? rotations,
-    String? primaryRotationId,
-    bool clearPrimaryRotationId = false,
+    String? lastViewedRotationId,
+    bool clearLastViewedRotationId = false,
+    String? myTeamRotationId,
+    String? myTeamGroupId,
+    bool clearMyTeam = false,
     Map<String, HolidayInfo>? holidayCache,
     DateTime? holidaysLastUpdated,
     bool clearHolidaysLastUpdated = false,
   }) =>
       ShiftConfig(
         rotations: rotations ?? this.rotations,
-        primaryRotationId: clearPrimaryRotationId
+        lastViewedRotationId: clearLastViewedRotationId
             ? null
-            : (primaryRotationId ?? this.primaryRotationId),
+            : (lastViewedRotationId ?? this.lastViewedRotationId),
+        myTeamRotationId: clearMyTeam
+            ? null
+            : (myTeamRotationId ?? this.myTeamRotationId),
+        myTeamGroupId: clearMyTeam
+            ? null
+            : (myTeamGroupId ?? this.myTeamGroupId),
         holidayCache: holidayCache ?? this.holidayCache,
         holidaysLastUpdated: clearHolidaysLastUpdated
             ? null
@@ -109,7 +129,9 @@ class ShiftConfig {
 
   Map<String, dynamic> toJson() => {
         'rotations': rotations.map((e) => e.toJson()).toList(),
-        'primaryRotationId': primaryRotationId,
+        'lastViewedRotationId': lastViewedRotationId,
+        'myTeamRotationId': myTeamRotationId,
+        'myTeamGroupId': myTeamGroupId,
         'holidayCache': holidayCache.map(
           (key, value) => MapEntry(key, value.toJson()),
         ),
@@ -121,7 +143,9 @@ class ShiftConfig {
                 ?.map((e) => ShiftRotation.fromJson(e as Map<String, dynamic>))
                 .toList() ??
             const [],
-        primaryRotationId: json['primaryRotationId'] as String?,
+        lastViewedRotationId: json['lastViewedRotationId'] as String?,
+        myTeamRotationId: json['myTeamRotationId'] as String?,
+        myTeamGroupId: json['myTeamGroupId'] as String?,
         holidayCache: ((json['holidayCache'] as Map<String, dynamic>?) ?? {})
             .map((key, value) => MapEntry(
                   key,
@@ -164,9 +188,6 @@ class ShiftRotation {
   /// 值为 [slots] 的下标。
   final List<List<int>> assignments;
 
-  /// 是否为主要轮班。
-  final bool isPrimary;
-
   const ShiftRotation({
     required this.id,
     required this.name,
@@ -175,7 +196,6 @@ class ShiftRotation {
     required this.groups,
     required this.slots,
     required this.assignments,
-    this.isPrimary = false,
   });
 
   static const int minCycleDays = 1;
@@ -206,7 +226,6 @@ class ShiftRotation {
     List<ShiftGroup>? groups,
     List<ShiftSlot>? slots,
     List<List<int>>? assignments,
-    bool? isPrimary,
   }) =>
       ShiftRotation(
         id: id ?? this.id,
@@ -216,7 +235,6 @@ class ShiftRotation {
         groups: groups ?? this.groups,
         slots: slots ?? this.slots,
         assignments: assignments ?? this.assignments,
-        isPrimary: isPrimary ?? this.isPrimary,
       );
 
   Map<String, dynamic> toJson() => {
@@ -227,7 +245,6 @@ class ShiftRotation {
         'groups': groups.map((e) => e.toJson()).toList(),
         'slots': slots.map((e) => e.toJson()).toList(),
         'assignments': assignments,
-        'isPrimary': isPrimary,
       };
 
   factory ShiftRotation.fromJson(Map<String, dynamic> json) {
@@ -251,7 +268,6 @@ class ShiftRotation {
       assignments: (json['assignments'] as List<dynamic>)
           .map((row) => (row as List<dynamic>).cast<int>())
           .toList(),
-      isPrimary: json['isPrimary'] as bool? ?? false,
     );
   }
 }

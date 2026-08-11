@@ -20,49 +20,64 @@ void main() {
 
     test('load creates default rotation when storage is empty', () {
       expect(controller.config.rotations, isNotEmpty);
-      expect(controller.config.primaryRotation, isNotNull);
+      expect(controller.config.selectedRotation, isNotNull);
     });
 
-    test('setPrimaryRotation updates primary id and flags', () async {
+    test('setLastViewedRotation updates last viewed id', () async {
       final first = controller.config.rotations.first;
       final secondRotation = first.copyWith(id: 'second');
       await controller.updateConfig(
         controller.config.copyWith(rotations: [first, secondRotation]),
       );
 
-      await controller.setPrimaryRotation('second');
+      await controller.setLastViewedRotation('second');
 
-      expect(controller.config.primaryRotationId, 'second');
-      expect(controller.config.findRotationById('second')?.isPrimary, true);
-      expect(controller.config.findRotationById(first.id)?.isPrimary, false);
+      expect(controller.config.lastViewedRotationId, 'second');
+      expect(controller.config.selectedRotation!.id, 'second');
     });
 
-    test('setPrimaryRotation no-op when already primary', () async {
-      final rotation = controller.config.primaryRotation!;
-      await controller.setPrimaryRotation(rotation.id);
-      expect(controller.config.primaryRotationId, rotation.id);
+    test('setMyTeam sets rotation and group', () async {
+      final rotation = controller.config.rotations.first;
+
+      await controller.setMyTeam(rotation.id, rotation.groups.first.id);
+
+      expect(controller.config.myTeamRotationId, rotation.id);
+      expect(controller.config.myTeamGroupId, rotation.groups.first.id);
+      expect(controller.config.myTeamGroup?.id, rotation.groups.first.id);
     });
 
-    test('clearPrimaryRotation removes primary designation', () async {
-      await controller.clearPrimaryRotation();
-
-      expect(controller.config.primaryRotationId, isNull);
-      expect(
-        controller.config.rotations.every((r) => !r.isPrimary),
-        true,
-      );
+    test('setMyTeam with null clears team', () async {
+      await controller.setMyTeam(null, null);
+      expect(controller.config.myTeamRotationId, isNull);
+      expect(controller.config.myTeamGroupId, isNull);
     });
 
-    test('deleteRotation removes rotation and clears primary', () async {
-      final rotation = controller.config.primaryRotation!;
+    test('clearMyTeam removes my team', () async {
+      final rotation = controller.config.rotations.first;
+      await controller.setMyTeam(rotation.id, rotation.groups.first.id);
+      expect(controller.config.myTeamGroup, isNotNull);
+
+      await controller.clearMyTeam();
+
+      expect(controller.config.myTeamRotationId, isNull);
+      expect(controller.config.myTeamGroupId, isNull);
+    });
+
+    test('deleteRotation removes rotation and clears derived refs', () async {
+      final rotation = controller.config.rotations.first;
+      await controller.setLastViewedRotation(rotation.id);
+      await controller.setMyTeam(rotation.id, rotation.groups.first.id);
+
       await controller.deleteRotation(rotation.id);
 
       expect(controller.config.findRotationById(rotation.id), isNull);
-      expect(controller.config.primaryRotationId, isNull);
+      expect(controller.config.lastViewedRotationId, isNull);
+      expect(controller.config.myTeamRotationId, isNull);
+      expect(controller.config.myTeamGroupId, isNull);
     });
 
     test('updateRotation persists name change', () async {
-      final rotation = controller.config.primaryRotation!;
+      final rotation = controller.config.rotations.first;
       final updated = rotation.copyWith(name: '改名后');
 
       await controller.updateRotation(updated);
@@ -72,7 +87,7 @@ void main() {
       expect(loaded.findRotationById(rotation.id)?.name, '改名后');
     });
 
-    test('addRotation appends rotation and sets primary', () async {
+    test('addRotation appends rotation', () async {
       await controller.addRotation(
         name: '三班两倒',
         baseDate: DateTime(2026, 8, 1),
@@ -92,14 +107,12 @@ void main() {
           [1, 2, 0],
           [2, 0, 1],
         ],
-        isPrimary: true,
       );
 
       final added = controller.config.rotations.last;
       expect(added.name, '三班两倒');
       expect(added.groups.length, 3);
       expect(added.cycleDays, 3);
-      expect(controller.config.primaryRotationId, added.id);
     });
   });
 }

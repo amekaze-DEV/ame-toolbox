@@ -17,7 +17,7 @@ void main() {
     test('load returns defaults when no data exists', () async {
       final config = await repository.load();
       expect(config.rotations, isNotEmpty);
-      expect(config.primaryRotation, isNotNull);
+      expect(config.selectedRotation, isNotNull);
     });
 
     test('save and load roundtrip preserves custom config', () async {
@@ -27,8 +27,9 @@ void main() {
       final loaded = await repository.load();
 
       expect(loaded.rotations.length, 1);
-      expect(loaded.primaryRotationId, 'rotation_a');
-      expect(loaded.findRotationById('rotation_a')?.isPrimary, true);
+      expect(loaded.lastViewedRotationId, 'rotation_a');
+      expect(loaded.myTeamRotationId, 'rotation_a');
+      expect(loaded.myTeamGroupId, 'group_a');
       expect(loaded.findRotationById('rotation_a')?.cycleDays, 3);
       expect(loaded.holidayCache['2026-10-01']?.name, '国庆节');
       expect(loaded.holidaysLastUpdated, _epoch);
@@ -58,10 +59,11 @@ ShiftConfig _customConfig() => ShiftConfig(
             [1, 2, 0],
             [2, 0, 1],
           ],
-          isPrimary: true,
         ),
       ],
-      primaryRotationId: 'rotation_a',
+      lastViewedRotationId: 'rotation_a',
+      myTeamRotationId: 'rotation_a',
+      myTeamGroupId: 'group_a',
       holidayCache: const {
         '2026-10-01': HolidayInfo(name: '国庆节', isHoliday: true),
       },

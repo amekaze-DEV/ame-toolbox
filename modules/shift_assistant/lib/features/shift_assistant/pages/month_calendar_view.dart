@@ -20,7 +20,7 @@ import 'shift_assistant_settings_page.dart';
 /// 每个单元格显示日期及当天承担该状态的班组名称。窄宽度时每周块可横向滚动。
 class MonthCalendarView extends ConsumerWidget {
   /// 单个日期单元格的最小宽度；7 列 + 标签列总宽低于此值时启用横向滚动。
-  static const double _minDayCellWidth = 48;
+  static const double _minDayCellWidth = 42;
 
   /// 左侧状态标签列宽度。
   static const double _shiftLabelWidth = 48;
@@ -44,7 +44,7 @@ class MonthCalendarView extends ConsumerWidget {
     final lunarService = ref.watch(lunarInfoServiceProvider);
     final holidayController = ref.watch(holidayDataProvider);
     final config = configController.config;
-    final rotation = config.primaryRotation;
+    final rotation = config.selectedRotation;
 
     final monthWeeks = calendarController.monthWeekGrid;
     final focusedMonth = calendarController.focusedMonth;
@@ -54,8 +54,8 @@ class MonthCalendarView extends ConsumerWidget {
         SliverToBoxAdapter(
           child: _CalendarToolbar(
             focusedMonth: focusedMonth,
-            rotations: config.orderedRotations,
-            primaryRotation: config.primaryRotation,
+            rotations: config.rotations,
+            selectedRotation: config.selectedRotation,
             onPreviousMonth: calendarController.previousMonth,
             onNextMonth: calendarController.nextMonth,
             onToday: calendarController.goToToday,
@@ -65,7 +65,7 @@ class MonthCalendarView extends ConsumerWidget {
             },
             onRotationChanged: (rotationId) {
               if (rotationId != null) {
-                configNotifier.setPrimaryRotation(rotationId);
+                configNotifier.setLastViewedRotation(rotationId);
               }
             },
             onSettings: () => _openSettings(context),
@@ -92,12 +92,14 @@ class MonthCalendarView extends ConsumerWidget {
                   final weekDayInfo = week.map((date) {
                     final lunarDate = lunarService.getLunarDate(date);
                     final solarTerm = lunarService.getSolarTerm(date);
+                    final solarFestivals = lunarService.getSolarFestivals(date);
                     final holiday = holidayController.getHoliday(date);
                     return scheduleService.buildDayInfo(
                       rotation,
                       date,
                       lunarDate: lunarDate,
                       solarTerm: solarTerm,
+                      solarFestivals: solarFestivals,
                       holiday: holiday,
                     );
                   }).toList();
@@ -126,7 +128,7 @@ class _CalendarToolbar extends StatelessWidget {
   const _CalendarToolbar({
     required this.focusedMonth,
     required this.rotations,
-    required this.primaryRotation,
+    required this.selectedRotation,
     required this.onPreviousMonth,
     required this.onNextMonth,
     required this.onToday,
@@ -137,7 +139,7 @@ class _CalendarToolbar extends StatelessWidget {
 
   final DateTime focusedMonth;
   final List<ShiftRotation> rotations;
-  final ShiftRotation? primaryRotation;
+  final ShiftRotation? selectedRotation;
   final VoidCallback onPreviousMonth;
   final VoidCallback onNextMonth;
   final VoidCallback onToday;
@@ -186,7 +188,7 @@ class _CalendarToolbar extends StatelessWidget {
             child: DropdownButton<String>(
               isExpanded: false,
               isDense: true,
-              value: primaryRotation?.id,
+              value: selectedRotation?.id,
               hint: const Text('选择轮班'),
               items: rotations.map((rotation) {
                 return DropdownMenuItem(
@@ -404,7 +406,7 @@ class _ShiftLabelColumn extends StatelessWidget {
       child: Column(
         children: [
           // 与 _DayColumn 顶部的日期行对齐。
-          const SizedBox(height: 24),
+          const SizedBox(height: 44),
           ...slotNames.map((name) {
             return Container(
               height: 24,
@@ -459,48 +461,60 @@ class _DayColumn extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: isSelected ? colorScheme.primaryContainer : null,
           borderRadius: BorderRadius.circular(12),
-          border: isToday
-              ? Border.all(color: colorScheme.primary, width: 1.5)
-              : null,
         ),
+        // 边框置于前景装饰层，绘制在班组卡片之上，避免被遮挡。
+        foregroundDecoration: isToday
+            ? BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colorScheme.primary, width: 1.5),
+              )
+            : null,
         child: Column(
           children: [
             // 日期行：公历日期 + 农历/节气/节假日标记
             Container(
-              height: 24,
+              height: 44,
               alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(vertical: 1),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.center,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${dayInfo.date.day}',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: isCurrentMonth
-                                ? (isToday ? colorScheme.primary : colorScheme.onSurface)
-                                : colorScheme.outline,
-                            fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _dayLabel(dayInfo),
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          fontSize: 14,
+                          height: 1.0,
+                          color: _dayLabelColor(
+                            dayInfo,
+                            markerColor,
+                            isCurrentMonth,
+                            isToday,
+                            colorScheme,
                           ),
-                    ),
-                    if (markerText != null)
-                      Text(
-                        markerText,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: markerColor,
-                              fontWeight: FontWeight.bold,
-                            ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
+                          fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                        ),
+                  ),
+                  if (markerText != null)
+                    // 自适应字体：节日名称长短不一，超出单元格宽度时等比缩小。
+                    SizedBox(
+                      width: double.infinity,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          markerText,
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                height: 1.0,
+                                color: markerColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
             ),
             // 各状态行：显示当天处于该状态的班组
@@ -535,18 +549,43 @@ class _DayColumn extends StatelessWidget {
     return result;
   }
 
-  /// 获取日期单元格的附加标记文本：优先显示节假日/节气，其次农历日期。
+  /// 获取日期单元格的附加标记文本：公历节日（国庆、教师、母亲等）优先，
+  /// 其次节气，再次农历日期。节假日/调休信息已由公历日期旁的“休/班”标记表达。
   String? _dayMarkerText(DayInfo info) {
+    if (info.solarFestivals.isNotEmpty) {
+      return info.solarFestivals.first;
+    }
     if (info.solarTerm != null && info.solarTerm!.isNotEmpty) {
       return info.solarTerm;
-    }
-    if (info.holiday != null) {
-      return info.holiday!.name;
     }
     if (info.lunarDate.isNotEmpty) {
       return info.lunarDate;
     }
     return null;
+  }
+
+  /// 生成日期格子左上用于公历日期的文本：法定假日尾缀“休”，调休工作日尾缀“班”。
+  String _dayLabel(DayInfo info) {
+    final holiday = info.holiday;
+    if (holiday != null && holiday.isHoliday) return '${info.date.day}休';
+    if (holiday != null && holiday.isWorkday) return '${info.date.day}班';
+    return '${info.date.day}';
+  }
+
+  /// 公历日期文字颜色：休/班用节假日标记色突出，其余按月份/今日区分。
+  Color _dayLabelColor(
+    DayInfo info,
+    Color markerColor,
+    bool isCurrentMonth,
+    bool isToday,
+    ColorScheme colorScheme,
+  ) {
+    final holiday = info.holiday;
+    if (holiday != null && (holiday.isHoliday || holiday.isWorkday)) {
+      return markerColor;
+    }
+    if (!isCurrentMonth) return colorScheme.outline;
+    return isToday ? colorScheme.primary : colorScheme.onSurface;
   }
 
   /// 获取日期单元格附加标记的颜色。
