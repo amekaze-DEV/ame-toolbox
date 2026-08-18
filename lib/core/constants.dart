@@ -76,7 +76,7 @@ class AppConstants {
       iconName: 'calculator',
     ),
     (
-      id: 'todo',
+      id: 'todo_list',
       name: '待办事项',
       description: '任务管理与到期提醒',
       iconName: 'todo',

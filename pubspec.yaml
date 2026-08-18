@@ -58,6 +58,9 @@ dependencies:
   # Desktop local notifications
   local_notifier: ^0.1.6
 
+  # 跨平台文件/图片选择（PC 端优先，供模块通过 FilePickerService 调用）
+  file_picker: ^11.0.3
+
   # 横屏双列高度自由的瀑布流布局（首页模块卡片）
   flutter_staggered_grid_view: ^0.7.0
 
@@ -68,6 +71,10 @@ dependencies:
   # 倒班助手子模块
   shift_assistant_module:
     path: modules/shift_assistant
+
+  # 待办清单子模块
+  todo_list_module:
+    path: modules/todo_list
 
 dev_dependencies:
   flutter_test:

@@ -8,6 +8,7 @@ import 'package:ametoolbox/core/modules/module_contract.dart';
 import 'package:ametoolbox/core/storage/storage_service.dart';
 import 'package:calculator_module/features/calculator/calculator_module.dart';
 import 'package:shift_assistant_module/features/shift_assistant/shift_assistant_module.dart';
+import 'package:todo_list_module/features/todo_list/todo_list_module.dart';
 
 /// 模块注册表——底座启动时扫描并注册所有模块。
 ///
@@ -22,6 +23,7 @@ class ModuleRegistry {
       return switch (module.id) {
         'calculator' => CalculatorModule(),
         'shift_assistant' => ShiftAssistantModule(),
+        'todo_list' => TodoListModule(),
         _ => _PlaceholderModule(definition: definition),
       };
     }).toList();

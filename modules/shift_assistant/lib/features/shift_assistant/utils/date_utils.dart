@@ -69,5 +69,11 @@ List<List<DateTime>> monthWeeks(DateTime date) {
   );
 }
 
-/// 将 [date] 格式化为年月展示字符串，如“2027年8月”。
+/// 将 [date] 格式化为年月展示字符串，如"2027年8月"。
 String formatMonthYear(DateTime date) => '${date.year}年${date.month}月';
+
+/// 将年份格式化为展示字符串，如"2026年"。
+String formatYear(int year) => '$year年';
+
+/// 将年份范围格式化为展示字符串，如"2020-2031年"。
+String formatYearRange(int startYear, int endYear) => '$startYear-$endYear年';

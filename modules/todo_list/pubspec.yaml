@@ -1,0 +1,40 @@
+name: todo_list_module
+description: "待办清单模块 - 独立开发与测试环境"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # 复用主项目底座的核心契约与基础设施
+  ametoolbox:
+    path: ../../
+
+  # 状态管理（与主项目版本保持一致）
+  flutter_riverpod: ^2.5.1
+
+  # 日期时间处理（BSD-3）
+  intl: ^0.20.0
+
+  # 农历、节气、节日查询（本地计算）
+  lunar: ^1.7.8
+
+  # 节假日/调休在线数据源拉取
+  http: ^1.2.0
+
+  # Material Design Icons（MDI 图标集，兼容 Flutter 3.44+ IconData final 变更）
+  flutter_mdi_icons: ^0.1.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

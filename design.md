@@ -725,6 +725,18 @@ Hive Storage
 - 每个数据模型类对应一个 TypeAdapter，注册到 Hive
 - 数据模型变更时，通过 version 字段处理兼容性
 
+#### 文件/图片选择能力（FilePickerService）
+
+底座提供统一的文件/图片选择能力，供模块通过 Riverpod Provider 调用，无需感知平台差异。
+
+- **服务接口**：`lib/core/files/file_picker_service.dart` 定义 `FilePickerService`（`pickImage` / `pickImages` / `pickFile`）
+- **平台抽象**：与 `DeviceInfoProvider` 同构，通过条件导入工厂（`file_picker_service_factory.dart`）在编译期选择实现，Web 走 stub 抛错；UI 层与模块不接触 `Platform` / `dart:io`
+- **能力入口**：`filePickerProvider`（Riverpod Provider），模块在 `buildPage` 中 `ref.read(filePickerProvider).pickImage()` 即可调用
+- **返回对象**：`PickedFile` 仅持元数据（name/path/extension/sizeBytes/mimeType），字节内容按需 `readContent()` 读取，避免大图常驻内存
+- **当前范围**：仅 PC 端落地（Windows 用 `file_picker` 实现），macOS/Linux 同插件天然支持，多平台后续补验证
+
+**图片落盘约定**：底座暂不新增二进制存储，模块如需持久化图片，使用 `module_<module_id>_` 前缀的 key，经 `StorageService.saveData/loadData` 以 base64 字符串存入 `module_data_box`。若未来出现大图/海量图片导致 JSON 膨胀，再为 `StorageService` 增加 `saveFile/loadFile/deleteFile` 二进制能力。
+
 #### 加密存储的使用场景
 
 **使用 flutter_secure_storage 加密存储的数据**：
