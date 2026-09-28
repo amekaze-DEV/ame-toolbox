@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:ametoolbox/core/providers/file_provider.dart';
 import 'package:ametoolbox/shared/widgets/adaptive_button.dart';
 import 'package:ametoolbox/shared/widgets/md3_switch.dart';
 
@@ -13,12 +16,6 @@ import '../providers/todo_list_provider.dart';
 import '../widgets/recurrence_rule_editor.dart';
 import '../widgets/todo_image_attachments_editor.dart';
 import '../widgets/todo_priority_selector.dart';
-
-/// 调试期占位图（1×1 红色 PNG），用于演示图片添加流程。
-/// 真实选图将在底座扩展文件选择能力后接入（P8/P10）。
-const _placeholderPngBase64 =
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ'
-    'AAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
 /// 待办详情 / 新增编辑页（P6）。
 ///
@@ -122,17 +119,25 @@ class _TodoDetailPageState extends ConsumerState<TodoDetailPage> {
     }
   }
 
-  void _addImage() {
-    setState(() {
-      _images = [
-        ..._images,
+  /// 通过底座文件选择能力挑选图片并转存为 base64 附件。
+  Future<void> _addImage() async {
+    final picked = await ref.read(filePickerProvider).pickImages();
+    if (picked.isEmpty) return;
+    final now = DateTime.now();
+    final additions = <TodoImageAttachment>[];
+    for (var i = 0; i < picked.length; i++) {
+      final bytes = await picked[i].readContent();
+      if (bytes.isEmpty) continue;
+      additions.add(
         TodoImageAttachment(
-          id: 'img_${DateTime.now().microsecondsSinceEpoch}',
-          dataBase64: _placeholderPngBase64,
-          createdAt: DateTime.now(),
+          id: 'img_${now.microsecondsSinceEpoch}_$i',
+          dataBase64: base64Encode(bytes),
+          createdAt: now,
         ),
-      ];
-    });
+      );
+    }
+    if (additions.isEmpty) return;
+    setState(() => _images = [..._images, ...additions]);
   }
 
   void _save() {

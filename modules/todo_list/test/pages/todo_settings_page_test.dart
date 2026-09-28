@@ -6,9 +6,9 @@ import 'package:ametoolbox/core/providers/storage_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:todo_list_module/debug/fake_device_info.dart';
-import 'package:todo_list_module/debug/memory_storage_service.dart';
-import 'package:todo_list_module/debug/noop_notification_service.dart';
+import '../helpers/fake_device_info.dart';
+import '../helpers/memory_storage_service.dart';
+import '../helpers/noop_notification_service.dart';
 import 'package:todo_list_module/features/todo_list/pages/todo_list_settings_page.dart';
 import 'package:todo_list_module/features/todo_list/providers/todo_config_provider.dart';
 

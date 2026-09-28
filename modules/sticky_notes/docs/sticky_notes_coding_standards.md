@@ -54,9 +54,9 @@
 
 | 类别 | 约定 |
 |------|------|
-| 颜色 | 全部取自 `Theme.of(context).colorScheme`（如 `primary`、`surfaceContainerHighest`、`onSurfaceVariant`） |
+| 颜色 | 界面颜色取自 `Theme.of(context).colorScheme`（如 `primary`、`surfaceContainerLow`、`onSurfaceVariant`）；正文文字颜色为用户可自定义项，取自模块内常用色板常量，未自定义时继承 `colorScheme` |
 | 圆角 | 小 4dp（分类圆点）、中 12dp（卡片）、大 16dp（对话框容器） |
-| 排版 | 使用 `Theme.of(context).textTheme`（富文本标题用 `titleLarge` / `titleMedium` / `titleSmall`），禁止硬编码字号 |
+| 排版 | 默认使用 `Theme.of(context).textTheme`，禁止硬编码界面字号；正文行内字号为用户可自定义的绝对 pt（取值范围 `kNoteFontSizeMin` ~ `kNoteFontSizeMax`），未自定义时继承 `textTheme` |
 | 动画 | 所有状态过渡动画 300ms + `Curves.easeInOut` |
 
 ---
@@ -73,7 +73,7 @@ lib/
     ├── models/                  # 数据模型与 JSON 序列化
     ├── pages/                   # 页面级 Widget
     ├── providers/               # Riverpod Provider + Controller
-    ├── services/                # 纯业务计算（排序/筛选/摘要/富文本）
+    ├── services/                # 纯业务计算（排序/筛选/摘要/富文本/行内 runs 引擎）
     └── widgets/                 # 模块私有组件
 ```
 
@@ -111,7 +111,11 @@ lib/
 - 所有读写通过 `StorageService` 抽象接口，禁止直接访问 Hive/文件系统。
 - 存储 key 必须使用 `module_sticky_notes_` 前缀。
 - 配置与业务数据分 key 存储（`module_sticky_notes_config` / `module_sticky_notes_notes`）。
-- 模型须实现 `toJson` / `fromJson`，JSON 携带 schema 版本字段以便迁移；`NoteBlock` sealed class 用 `type` discriminator 反序列化。
+- 模型须实现 `toJson` / `fromJson`，JSON 携带 schema 版本字段以便迁移；`NoteBlock` sealed class 用 `type` discriminator 反序列化（新增子类须同步补齐所有穷尽 `switch`）。
+- 行内样式使用绝对字号（`fontSize`，double）与自定义颜色（`colorValue`，ARGB int），非法值反序列化时归一化为 `null`（回退继承）。
+- 已废弃的块类型标识须在 `NoteBlock.fromJson` 中降级为文本块，避免旧数据解析失败。
+- 常用色板（取色盘）集中定义在 `widgets/note_text_style_panel.dart`，不得散落硬编码颜色。
+- 兼容旧数据：`StickyNote.fromJson` 负责把旧版 `images` 迁移为正文末尾的 `ImageBlock`，迁移逻辑集中在单一入口。
 
 ---
 
@@ -129,7 +133,7 @@ lib/
 |----|------|
 | 静态分析 | `flutter analyze` 零报错 |
 | 单元测试 | 覆盖率 ≥80% |
-| 测试范围 | 模型 JSON 往返（含 `NoteBlock` sealed class 各子类）、`NoteQueryService`（置顶/排序/筛选）、`NoteSummaryService`（摘要）、`NoteRichTextParser`（解析/渲染分发）、Repository、页面 Widget 测试 |
+| 测试范围 | 模型 JSON 往返（含文本块/图片块、旧图片附件与旧块类型迁移）、`NoteInlineRuns`（行内 runs 纯函数：归一化/选区样式/文本 diff）、`NoteQueryService`（置顶/排序/筛选）、`NoteSummaryService`（摘要）、`NoteRichTextParser`（解析/渲染分发/行内样式解析）、Repository、页面与组件 Widget 测试（含字号选择器与取色盘交互） |
 | 提交前 | 运行 `flutter analyze` 与 `flutter test` 通过 |
 
 ---

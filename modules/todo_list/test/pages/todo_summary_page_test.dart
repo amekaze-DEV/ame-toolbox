@@ -6,9 +6,9 @@ import 'package:ametoolbox/core/providers/storage_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:todo_list_module/debug/fake_device_info.dart';
-import 'package:todo_list_module/debug/memory_storage_service.dart';
-import 'package:todo_list_module/debug/noop_notification_service.dart';
+import '../helpers/fake_device_info.dart';
+import '../helpers/memory_storage_service.dart';
+import '../helpers/noop_notification_service.dart';
 import 'package:todo_list_module/features/todo_list/models/recurrence_pattern.dart';
 import 'package:todo_list_module/features/todo_list/models/recurrence_rule.dart';
 import 'package:todo_list_module/features/todo_list/models/todo_item.dart';
@@ -52,6 +52,7 @@ void main() {
     TodoPriority priority = TodoPriority.normal,
     String? categoryId,
     bool isArchived = false,
+    bool isCompleted = false,
     bool isRecurring = false,
     DateTime? completedAt,
   }) {
@@ -62,6 +63,7 @@ void main() {
       priority: priority,
       categoryId: categoryId,
       isArchived: isArchived,
+      isCompleted: isCompleted,
       completedAt: completedAt,
       recurrenceRules: isRecurring
           ? [
@@ -130,18 +132,18 @@ void main() {
   testWidgets('历史页仅展示已关闭事项，循环单日实例不展示', (tester) async {
     final now = DateTime.now();
     final container = await seedItems([
-      makeItem(id: 'one', title: '历史单次', isArchived: true, completedAt: now),
+      makeItem(id: 'one', title: '历史单次', isCompleted: true, completedAt: now),
       // 循环模板（仍在循环，未关闭）
       makeItem(id: 'rec', title: '循环模板', isRecurring: true),
       // 循环单日实例（仅单日完成，模板仍在循环）→ 不应记录
       makeItem(
         id: 'rec_20260801',
         title: '循环单日实例',
-        isArchived: true,
+        isCompleted: true,
         completedAt: now,
       ),
       // 循环模板整系列关闭 → 记录
-      makeItem(id: 'closed', title: '已关闭循环', isRecurring: true, isArchived: true, completedAt: now),
+      makeItem(id: 'closed', title: '已关闭循环', isRecurring: true, isCompleted: true, completedAt: now),
     ]);
 
     await tester.pumpWidget(
@@ -168,7 +170,7 @@ void main() {
       makeItem(
         id: 'one',
         title: '历史事项',
-        isArchived: true,
+        isCompleted: true,
         completedAt: now,
         priority: TodoPriority.high,
         categoryId: 'work',
@@ -196,7 +198,7 @@ void main() {
 
     final items = container.read(todoListProvider).items;
     final created = items.firstWhere(
-      (e) => e.title == '历史事项' && !e.isArchived && e.id != 'one',
+      (e) => e.title == '历史事项' && !e.isCompleted && e.id != 'one',
     );
     expect(created.dueDate, isNull);
     expect(created.recurrenceRules, isEmpty);
@@ -207,7 +209,7 @@ void main() {
   testWidgets('历史页条目详情只读，不提供编辑按钮', (tester) async {
     final now = DateTime.now();
     final container = await seedItems([
-      makeItem(id: 'one', title: '历史只读项', isArchived: true, completedAt: now),
+      makeItem(id: 'one', title: '历史只读项', isCompleted: true, completedAt: now),
     ]);
 
     await tester.pumpWidget(

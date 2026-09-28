@@ -263,16 +263,16 @@ class _OperatorBar extends StatelessWidget {
       runSpacing: 4,
       children: [
         for (final op in operators)
-          ActionChip(
-            label: Text(op),
+          _OperatorButton(
+            label: op,
             onPressed: () => onOperator(_mapOperator(op)),
           ),
-        ActionChip(
-          label: const Text('C'),
+        _OperatorButton(
+          label: 'C',
           onPressed: onClear,
         ),
-        ActionChip(
-          label: const Text('='),
+        _OperatorButton(
+          label: '=',
           onPressed: onCalculate,
         ),
       ],
@@ -285,6 +285,37 @@ class _OperatorBar extends StatelessWidget {
       '÷' => '/',
       _ => op,
     };
+  }
+}
+
+/// 精简算符栏中的单个按钮。
+///
+/// [ActionChip] 的可见区域贴合标签内容宽度，不同字符（如 `+` 与 `(`）会导致
+/// 按钮宽度不一致且居中显示；这里用固定宽度的标签容器统一所有按钮的可见尺寸。
+class _OperatorButton extends StatelessWidget {
+  const _OperatorButton({
+    required this.label,
+    required this.onPressed,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+
+  /// 标签统一宽度，保证每个按钮的可见尺寸完全一致。
+  static const double _labelWidth = 16;
+
+  @override
+  Widget build(BuildContext context) {
+    return ActionChip(
+      label: SizedBox(
+        width: _labelWidth,
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+        ),
+      ),
+      onPressed: onPressed,
+    );
   }
 }
 

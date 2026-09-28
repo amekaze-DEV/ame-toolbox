@@ -1,20 +1,54 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:ametoolbox/core/files/file_picker_service.dart';
+import 'package:ametoolbox/core/files/picked_file.dart';
 import 'package:ametoolbox/core/input/input_mode_scope.dart';
 import 'package:ametoolbox/core/models/input_mode.dart';
+import 'package:ametoolbox/core/providers/file_provider.dart';
 import 'package:ametoolbox/core/providers/notification_provider.dart';
 import 'package:ametoolbox/core/providers/platform_provider.dart';
 import 'package:ametoolbox/core/providers/storage_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:todo_list_module/debug/fake_device_info.dart';
-import 'package:todo_list_module/debug/memory_storage_service.dart';
-import 'package:todo_list_module/debug/noop_notification_service.dart';
+import '../helpers/fake_device_info.dart';
+import '../helpers/memory_storage_service.dart';
+import '../helpers/noop_notification_service.dart';
 import 'package:todo_list_module/features/todo_list/models/recurrence_pattern.dart';
 import 'package:todo_list_module/features/todo_list/models/recurrence_rule.dart';
 import 'package:todo_list_module/features/todo_list/models/todo_item.dart';
 import 'package:todo_list_module/features/todo_list/models/todo_priority.dart';
 import 'package:todo_list_module/features/todo_list/pages/todo_detail_page.dart';
 import 'package:todo_list_module/features/todo_list/providers/todo_list_provider.dart';
+
+/// 测试用假文件选择服务：返回预设结果并记录调用次数。
+class _FakeFilePicker implements FilePickerService {
+  _FakeFilePicker(this.results);
+
+  final List<PickedFile> results;
+  int pickImagesCallCount = 0;
+
+  @override
+  Future<PickedFile?> pickImage({List<String>? allowedExtensions}) async =>
+      results.isEmpty ? null : results.first;
+
+  @override
+  Future<List<PickedFile>> pickImages({List<String>? allowedExtensions}) async {
+    pickImagesCallCount++;
+    return results;
+  }
+
+  @override
+  Future<PickedFile?> pickFile({List<String>? allowedExtensions}) async =>
+      results.isEmpty ? null : results.first;
+}
+
+/// 1×1 红色 PNG，用于验证附件字节往返。
+final Uint8List _demoPngBytes = base64Decode(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ'
+  'AAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+);
 
 void main() {
   late MemoryStorageService storage;
@@ -69,6 +103,68 @@ void main() {
     final controller = container.read(todoListProvider);
     expect(controller.items, hasLength(1));
     expect(controller.items.first.title, '新增事项');
+  });
+
+  testWidgets('点击添加图片调用底座选择器并生成 base64 附件', (tester) async {
+    final fakePicker = _FakeFilePicker([
+      PickedFile(
+        name: 'demo.png',
+        path: r'C:\demo.png',
+        extension: 'png',
+        sizeBytes: _demoPngBytes.length,
+        readBytes: () async => _demoPngBytes,
+      ),
+    ]);
+    final container = ProviderContainer(
+      overrides: [
+        ...overrides(),
+        filePickerProvider.overrideWithValue(fakePicker),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      wrap(const MaterialApp(home: TodoDetailPage()), container: container),
+    );
+
+    expect(fakePicker.pickImagesCallCount, 0);
+    await tester.tap(find.text('添加图片'));
+    await tester.pumpAndSettle();
+    expect(fakePicker.pickImagesCallCount, 1);
+
+    // 输入名称保存后，附件已写入待办并正确编码。
+    await tester.enterText(find.byType(TextField).first, '带图事项');
+    await tester.tap(find.text('保存'));
+    await tester.pumpAndSettle();
+
+    final controller = container.read(todoListProvider);
+    expect(controller.items, hasLength(1));
+    expect(controller.items.first.images, hasLength(1));
+    expect(
+      controller.items.first.images.first.dataBase64,
+      base64Encode(_demoPngBytes),
+    );
+  });
+
+  testWidgets('取消选图不添加任何附件', (tester) async {
+    final fakePicker = _FakeFilePicker([]);
+    final container = ProviderContainer(
+      overrides: [
+        ...overrides(),
+        filePickerProvider.overrideWithValue(fakePicker),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      wrap(const MaterialApp(home: TodoDetailPage()), container: container),
+    );
+
+    expect(find.text('暂无图片'), findsOneWidget);
+    await tester.tap(find.text('添加图片'));
+    await tester.pumpAndSettle();
+    expect(fakePicker.pickImagesCallCount, 1);
+    expect(find.text('暂无图片'), findsOneWidget);
   });
 
   testWidgets('提醒开关默认开启，关闭后保存写入 remindEnabled', (tester) async {
@@ -258,7 +354,7 @@ void main() {
 
     final archived = container.read(todoListProvider).items.single;
     expect(archived.isCompleted, true);
-    expect(archived.isArchived, true);
+    expect(archived.isArchived, false);
   });
 
   testWidgets('编辑循环事项显示关闭循环待办并可整系列关闭', (tester) async {
@@ -298,9 +394,9 @@ void main() {
     await tester.tap(find.text('关闭'));
     await tester.pumpAndSettle();
 
-    // 模板及其实例全部销项归入历史
+    // 模板及其实例全部标记完成
     for (final e in container.read(todoListProvider).items) {
-      expect(e.isArchived, true);
+      expect(e.isCompleted, true);
     }
   });
 }

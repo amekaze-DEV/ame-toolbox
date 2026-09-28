@@ -7,9 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:todo_list_module/debug/fake_device_info.dart';
-import 'package:todo_list_module/debug/memory_storage_service.dart';
-import 'package:todo_list_module/debug/noop_notification_service.dart';
+import '../helpers/fake_device_info.dart';
+import '../helpers/memory_storage_service.dart';
+import '../helpers/noop_notification_service.dart';
 import 'package:todo_list_module/features/todo_list/models/holiday_info.dart';
 import 'package:todo_list_module/features/todo_list/models/recurrence_pattern.dart';
 import 'package:todo_list_module/features/todo_list/models/recurrence_rule.dart';
@@ -298,7 +298,7 @@ void main() {
     expect(find.text('日常任务'), findsNothing);
   });
 
-  testWidgets('勾选完成需确认，确认后销项移入历史', (tester) async {
+  testWidgets('勾选完成需确认，确认后标记完成并保留在列表底部', (tester) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final item = TodoItem(
@@ -332,17 +332,22 @@ void main() {
     await tester.tap(find.text('取消'));
     await tester.pumpAndSettle();
     expect(find.text('待销项任务'), findsOneWidget);
-    expect(container.read(todoListProvider).items.single.isArchived, isFalse);
+    expect(container.read(todoListProvider).items.single.isCompleted, isFalse);
 
-    // 再次勾选并确认 → 销项归档
+    // 再次勾选并确认 → 标记完成，保留在列表（移动至底部）
     await tester.tap(find.byIcon(Icons.radio_button_unchecked));
     await tester.pumpAndSettle();
     await tester.tap(find.text('完成'));
     await tester.pumpAndSettle();
-    expect(find.text('待销项任务'), findsNothing);
-    final archived = container.read(todoListProvider).items.single;
-    expect(archived.isCompleted, isTrue);
-    expect(archived.isArchived, isTrue);
+
+    // 事项保留在列表中，标记为已完成
+    expect(find.text('待销项任务'), findsOneWidget);
+    final done = container.read(todoListProvider).items.single;
+    expect(done.isCompleted, isTrue);
+    expect(done.isArchived, isFalse);
+    // 勾选按钮显示为已完成态
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+    expect(find.byIcon(Icons.radio_button_unchecked), findsNothing);
   });
 
   testWidgets('完成循环单日实例后日历不再标记该日', (tester) async {

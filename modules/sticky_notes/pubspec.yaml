@@ -1,0 +1,31 @@
+name: sticky_notes_module
+description: "便签模块 - 临时独立调试应用（合并主线后清理临时入口）"
+publish_to: 'none'
+
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # 复用主项目底座的核心契约与基础设施
+  ametoolbox:
+    path: ../../
+
+  # 状态管理（与主项目版本保持一致）
+  flutter_riverpod: ^2.5.1
+
+  # 日期时间格式化（BSD-3，底座已声明依赖）
+  intl: ^0.20.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

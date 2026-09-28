@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_mdi_icons/flutter_mdi_icons.dart';
 import 'package:intl/intl.dart';
@@ -45,6 +47,15 @@ const double _gridCellHeight = 78;
 
 /// 网格内容高度（4 行 + 3 行间距，不含内外边距）。
 final double _gridContentHeight = 4 * _gridCellHeight + 3 * _gridRowGap;
+
+/// 工具栏标题区固定基准宽度。
+///
+/// 标题区在左右箭头之间保留固定宽度并居中，使两箭头相对位置固定、
+/// 标题显示大小尽量稳定；可用空间不足时收缩并由 [FittedBox] 等比缩放文本。
+const double _headerTitleBaseWidth = 120;
+
+/// 工具栏左右箭头固定占位宽度（2 × 48 触控最小点击区）。
+const double _headerArrowsWidth = 96;
 
 /// 单日附加展示信息（农历 / 节气 / 节日 / 节假日调休）。
 ///
@@ -281,6 +292,17 @@ class TodoMonthCalendarView extends StatelessWidget {
         final showToday = constraints.maxWidth >= 220;
         final showJump =
             constraints.maxWidth >= 320 && onDateJump != null;
+        // 除标题区外其余固定占位：左右箭头 + 当前显示的按钮（保守估算宽度）。
+        const jumpButtonWidth = 88.0; // 「日期转跳」
+        const todayButtonWidth = 64.0; // 「今天」
+        final reservedWidth = _headerArrowsWidth +
+            (showJump ? jumpButtonWidth : 0) +
+            (showToday ? todayButtonWidth : 0);
+        // 标题区宽度：优先固定基准宽度，空间不足时收缩（FittedBox 等比缩放文本）。
+        final titleWidth = math.min(
+          _headerTitleBaseWidth,
+          math.max(0.0, constraints.maxWidth - reservedWidth),
+        );
         // 布局：`< 标题 >` 整体靠左，`日期转跳`/`今天` 靠右。
         return Row(
           children: [
@@ -289,20 +311,24 @@ class TodoMonthCalendarView extends StatelessWidget {
               tooltip: prevTooltip,
               onPressed: onPreviousUnit,
             ),
-            Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: GestureDetector(
-                  // 标题可点击：日→月、月→年、年无操作。
-                  onTap: onTitleTap,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 2,
-                    ),
-                    child: Text(
-                      _titleText,
-                      style: textTheme.titleMedium,
+            // 标题区固定宽度并居中：左右箭头相对位置固定，标题不随年月文字长度漂移。
+            SizedBox(
+              width: titleWidth,
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: GestureDetector(
+                    // 标题可点击：日→月、月→年、年无操作。
+                    onTap: onTitleTap,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
+                      child: Text(
+                        _titleText,
+                        style: textTheme.titleMedium,
+                      ),
                     ),
                   ),
                 ),
@@ -386,6 +412,9 @@ class TodoMonthCalendarView extends StatelessWidget {
         date.year == today.year &&
         date.month == today.month &&
         date.day == today.day;
+    // 非当月（上月/下月补位）：浅灰弱化强调。
+    final isCurrentMonth =
+        date.year == displayMonth.year && date.month == displayMonth.month;
     // 当日待办最高优先级（无待办为 null，不显示色点）。
     final markPriority = markedDates[date];
 
@@ -398,12 +427,12 @@ class TodoMonthCalendarView extends StatelessWidget {
     // 附加标记：公历节日 > 节气 > 农历日期。
     final markerText = _markerText(extra);
     final markerColor = _markerColor(colorScheme, extra);
-    // 公历日期文字：休/班用节假日色，其余按选中/今日/普通区分。
+    // 公历日期文字：休/班用节假日色，其余按选中/非当月/普通区分。
     final labelColor = _labelColor(
       colorScheme,
       extra,
       isSelected,
-      isToday,
+      isCurrentMonth,
     );
 
     return InkWell(
@@ -428,7 +457,8 @@ class TodoMonthCalendarView extends StatelessWidget {
                   style: textTheme.bodyMedium?.copyWith(
                     height: 1.1,
                     color: labelColor,
-                    fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                    // 强调层级：非当月(浅灰)/当月(常规)/当日(常规+描边)均加粗。
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 if (markerText != null)
@@ -494,28 +524,51 @@ class TodoMonthCalendarView extends StatelessWidget {
     return '${date.day}';
   }
 
-  /// 公历日期文字颜色：休/班用节假日标记色突出，其余按选中/今日区分。
+  /// 公历日期文字颜色：休/班用节假日标记色突出，其余按选中/非当月区分。
+  ///
+  /// 强调层级：调休上班(班)用红、休息/法定节假日(休)用绿；非当月补位日期浅灰弱化，
+  /// 当月用常规色；当日文字同为常规色，另通过单元格描边额外强调；选中态用容器对比色。
   static Color _labelColor(
     ColorScheme colorScheme,
     TodoDayExtra? extra,
     bool isSelected,
-    bool isToday,
+    bool isCurrentMonth,
   ) {
     final holiday = extra?.holiday;
-    if (holiday != null && (holiday.isHoliday || holiday.isWorkday)) {
+    if (holiday != null && holiday.isWorkday) {
+      // 调休上班（原为休息日）：红色。
       return colorScheme.error;
     }
+    if (holiday != null && holiday.isHoliday) {
+      // 调休休息 / 法定节假日：绿色。
+      return _restGreen(colorScheme);
+    }
     if (isSelected) return colorScheme.onPrimaryContainer;
-    if (isToday) return colorScheme.primary;
+    if (!isCurrentMonth) {
+      // 非当月补位日期：浅灰，弱化强调。
+      return colorScheme.onSurface.withValues(alpha: 0.38);
+    }
+    // 当月与当日：常规色（当日通过单元格描边额外强调）。
     return colorScheme.onSurface;
   }
 
-  /// 附加标记的颜色：节假日/调休用 error，节气用 tertiary，其余用次要色。
+  /// 休息日（调休休息 / 法定节假日）文字绿色。
+  ///
+  /// 浅色主题用深绿保证对比度，深色主题用亮绿。
+  static Color _restGreen(ColorScheme colorScheme) =>
+      colorScheme.brightness == Brightness.dark
+          ? const Color(0xFF81C784) // Green 300
+          : const Color(0xFF2E7D32); // Green 800
+
+  /// 附加标记的颜色：调休上班用 error(红)、休息/法定节假日用绿，节气用 tertiary，其余用次要色。
   static Color _markerColor(ColorScheme colorScheme, TodoDayExtra? extra) {
     if (extra == null) return colorScheme.onSurfaceVariant;
     final holiday = extra.holiday;
-    if (holiday != null && (holiday.isHoliday || holiday.isWorkday)) {
+    if (holiday != null && holiday.isWorkday) {
       return colorScheme.error;
+    }
+    if (holiday != null && holiday.isHoliday) {
+      return _restGreen(colorScheme);
     }
     if (extra.solarTerm != null && extra.solarTerm!.isNotEmpty) {
       return colorScheme.tertiary;

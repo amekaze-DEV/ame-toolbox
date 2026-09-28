@@ -1,5 +1,5 @@
 name: todo_list_module
-description: "待办清单模块 - 独立开发与测试环境"
+description: "待办清单模块 - 已并入主应用，与主应用共同开发与测试"
 publish_to: 'none'
 
 version: 1.0.0+1

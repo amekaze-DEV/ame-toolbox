@@ -134,7 +134,7 @@ void main() {
         ), // 循环命中今日
       ];
       final s = service.computeSummary(items, now);
-      expect(s.total, 4);
+      expect(s.total, 3); // a,b,d（已完成 c 不计入）
       expect(s.pendingCount, 3); // a,b,d 未完成
       expect(s.todayCount, 2); // a, d
       expect(s.overdueCount, 1); // b

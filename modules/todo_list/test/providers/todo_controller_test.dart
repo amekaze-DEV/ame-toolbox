@@ -1,6 +1,6 @@
 import 'package:ametoolbox/core/notifications/notification_service.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:todo_list_module/debug/memory_storage_service.dart';
+import '../helpers/memory_storage_service.dart';
 import 'package:todo_list_module/features/todo_list/data/todo_config_repository.dart';
 import 'package:todo_list_module/features/todo_list/data/todo_list_repository.dart';
 import 'package:todo_list_module/features/todo_list/models/recurrence_pattern.dart';
@@ -159,12 +159,12 @@ void main() {
       expect(reloaded.items.first.title, '任务A');
     });
 
-    test('toggleComplete 一次性事项完成入历史', () async {
+    test('toggleComplete 一次性事项完成标记', () async {
       await controller.add(oneTime(id: 'a'));
       await controller.toggleComplete('a');
       final item = controller.items.first;
       expect(item.isCompleted, true);
-      expect(item.isArchived, true);
+      expect(item.isArchived, false);
       expect(item.completedAt, isNotNull);
 
       // 取消完成恢复
@@ -218,10 +218,10 @@ void main() {
         controller.items.firstWhere((e) => e.id == 'tpl').isArchived,
         false,
       );
-      // 当次实例完成并归档
+      // 当次实例完成，模板保持开启
       final inst = controller.items.firstWhere((e) => e.id == 'tpl_20260801');
       expect(inst.isCompleted, true);
-      expect(inst.isArchived, true);
+      expect(inst.isArchived, false);
     });
 
     test('toggleComplete 循环模板改为完成今天实例，不关模板', () async {
@@ -237,7 +237,7 @@ void main() {
       );
     });
 
-    test('closeRecurring 关闭整个循环归入历史', () async {
+    test('closeRecurring 关闭整个循环标记完成', () async {
       final rule = RecurrenceRule(
         pattern: const MonthlyDayPattern(interval: 1, days: {1}),
         startDate: DateTime(2026, 8, 1),
@@ -248,7 +248,7 @@ void main() {
       await controller.closeRecurring('tpl');
       for (final e in controller.items) {
         expect(e.isCompleted, true);
-        expect(e.isArchived, true);
+        expect(e.isArchived, false);
       }
     });
 

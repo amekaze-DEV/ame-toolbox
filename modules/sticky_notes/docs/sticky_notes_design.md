@@ -41,15 +41,15 @@
 #### ADR-SN-001：富文本用自研块模型而非第三方依赖
 
 - **状态**: 已采纳
-- **背景**: 富文本渲染若引入 `flutter_markdown` 等第三方包，需新增依赖并经 OWNER 确认；且富文本需求较轻量（段落/标题/列表/引用 + 行内粗斜删）。
-- **决策**: 定义自研 `NoteBlock`（sealed class）+ `NoteInline` 块模型，用 Flutter 内置 `Text` / `RichText` 渲染；JSON 用 `type` discriminator 反序列化。
-- **后果**: 无新增依赖、类型即文档；渲染能力受限于内置组件，复杂排版（表格等）不支持，作为已知取舍记录。
+- **背景**: 富文本渲染若引入 `flutter_quill` / `flutter_markdown` 等第三方包，需新增依赖并经 OWNER 确认；且富文本需求较轻量（连续文本 + 行内加粗/斜体/下划线/删除线/字号/颜色 + 内联图片）。
+- **决策**: 定义自研 `NoteBlock`（sealed class）+ `NoteInline` 块模型；行内样式以 `List<NoteInline>`（runs）为唯一真源，自研 `RichTextEditingController` 覆写 `buildTextSpan` 渲染，文本编辑与选区样式应用收敛为纯函数（`NoteInlineRuns`）；JSON 用 `type` discriminator 反序列化。
+- **后果**: 无新增依赖、类型即文档；渲染能力受限于内置组件，复杂排版（表格等）不支持，作为已知取舍记录。列表编辑区由每块一个 `TextField` 承载文本、图片块独立渲染，实现图文上下混排。
 
 #### ADR-SN-002：正文图片 base64 内嵌存储
 
 - **状态**: 已采纳
-- **背景**: 图片附件需随便签数据一并存储与同步，且不引入额外文件管理复杂性。
-- **决策**: 图片以 base64 内嵌于 `StickyNote.images`，随 `module_sticky_notes_notes` 一并持久化。
+- **背景**: 图片需随便签数据一并存储与同步、与正文混排，且不引入额外文件管理复杂性。
+- **决策**: 图片以 base64 内嵌于 `NoteImageAttachment`，并作为 `ImageBlock` 内联在 `StickyNote.content` 中，随 `module_sticky_notes_notes` 一并持久化；旧版 `StickyNote.images` 在读取时迁移为正文末尾图片块。
 - **后果**: 存储自包含、无需管理文件生命周期；代价是图片多/尺寸大时数据量增加，设计阶段限定单图大小与数量阈值。
 
 #### ADR-SN-003：数据按“配置 + 业务列表”双 key 存储
@@ -58,6 +58,13 @@
 - **背景**: 分类与排序配置是低频元数据；便签是高频业务数据，且需按模块整体同步。
 - **决策**: `StickyNotesConfig`（含分类、排序）存于 `module_sticky_notes_config`；便签列表存于 `module_sticky_notes_notes`。`exportData` 导出两者，`importData` 按 id 合并。
 - **后果**: 配置与业务数据分离；同步导入按 id 合并，避免重复导入产生重复项。
+
+#### ADR-SN-005：正文取消块类型，改为「文本块 + 图片块」连续图文
+
+- **状态**: 已采纳
+- **背景**: 初版按块类型（段落/标题/无序/有序/待办/引用）组织正文，并为每块提供「添加段落 / 块格式 / 删除本块」等操作入口，交互层级过重，与「一个便签对应一段内容」的博客式录入诉求不符。
+- **决策**: 移除全部块类型与块级操作入口，正文只由**文本块**与**图片块**按顺序组成（回车即换行）；行内字号改为绝对 pt（滑块 + 数值输入框，8 ~ 72），字体颜色改为常用色板（参考 Office 主题色板）中的自定义 ARGB；正文编辑区改为独立的填充 + 描边容器，与页面背景区分。旧块类型数据在读取时降级为文本块。
+- **后果**: 交互与数据模型显著简化，正文即「一段图文」；代价是失去标题/列表/引用等结构化排版，且旧有序列表序号、待办勾选状态不再保留（仅保留文本）。字号与颜色不再严格受 `textTheme` / `colorScheme` 约束（未自定义时仍继承，主题切换仅对未自定义部分自适应）。
 
 #### ADR-SN-004：置顶独立于排序方式
 
@@ -111,10 +118,11 @@ flowchart TD
 |------|------|--------|
 | `StickyNotesConfig` | 模块级根配置：分类列表、默认排序方式 | 是（`module_sticky_notes_config`） |
 | `NoteCategory` | 单个分类：名称、颜色、显示顺序 | 嵌入 `StickyNotesConfig` |
-| `StickyNote` | 单个便签：标题、富文本正文、图片、分类、置顶、时间 | 是（`module_sticky_notes_notes`） |
-| `NoteBlock`(sealed) | 富文本块：段落/标题/无序/有序/待办/引用 | 嵌入 `StickyNote.content` |
-| `NoteInline` | 行内元素：文本 + 粗体/斜体/删除线/链接 | 嵌入 `NoteBlock` |
-| `NoteImageAttachment` | 正文图片附件：base64 数据、创建时间 | 嵌入 `StickyNote.images` |
+| `StickyNote` | 单个便签：标题、图文正文、分类、置顶、时间 | 是（`module_sticky_notes_notes`） |
+| `NoteBlock`(sealed) | 正文块：文本块 / 图片块 | 嵌入 `StickyNote.content` |
+| `ImageBlock` | 图片块：内联图片载荷（图文混排） | 嵌入 `StickyNote.content` |
+| `NoteInline` | 行内元素：文本 + 加粗/斜体/下划线/删除线/绝对字号/自定义颜色/链接 | 嵌入 `NoteBlock` |
+| `NoteImageAttachment` | 图片载荷：base64 数据、创建时间 | 嵌入 `ImageBlock` |
 | `NoteSummary` | 首页摘要聚合 | 不持久化，运行时派生 |
 
 ### 3.2 持久化策略

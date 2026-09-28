@@ -260,6 +260,39 @@ void main() {
     expect(find.text('16'), findsOneWidget);
   });
 
+  testWidgets('调休上班显示红色，休息/法定节假日显示绿色', (tester) async {
+    final extras = _extrasFor(displayMonth);
+    extras[DateTime(2026, 8, 1)] = const TodoDayExtra(
+      lunarDate: '十九',
+      holiday: HolidayInfo(name: '建军节', isHoliday: true),
+    );
+    extras[DateTime(2026, 8, 15)] = const TodoDayExtra(
+      lunarDate: '初三',
+      holiday: HolidayInfo(name: '调休补班', isWorkday: true),
+    );
+
+    await tester.pumpWidget(_host(
+      displayMonth: displayMonth,
+      selectedDate: DateTime(2026, 8, 1),
+      today: DateTime(2026, 8, 1),
+      dayExtras: extras,
+    ));
+    await tester.pumpAndSettle();
+
+    final colorScheme =
+        Theme.of(tester.element(find.byType(TodoMonthCalendarView)))
+            .colorScheme;
+
+    // 休息 / 法定节假日（休）：绿色（浅色主题为 Green 800）。
+    final holiday = tester.widget<Text>(find.text('1休'));
+    expect(holiday.style?.color, const Color(0xFF2E7D32));
+
+    // 调休上班（班）：红色（error），与休区分。
+    final workday = tester.widget<Text>(find.text('15班'));
+    expect(workday.style?.color, colorScheme.error);
+    expect(workday.style?.color, isNot(const Color(0xFF2E7D32)));
+  });
+
   testWidgets('农历、节气、公历节日按优先级显示', (tester) async {
     final extras = _extrasFor(displayMonth);
     // 节气优先于农历
@@ -366,6 +399,71 @@ void main() {
       find.byKey(const ValueKey('todo_mark_2026_7_27')),
       findsOneWidget,
     );
+  });
+
+  testWidgets('日期强调层级：非当月浅灰加粗、当月常规加粗、当日常规加粗并描边', (tester) async {
+    await tester.pumpWidget(_host(
+      displayMonth: displayMonth,
+      selectedDate: DateTime(2026, 8, 1),
+      today: DateTime(2026, 8, 15),
+      dayExtras: const {},
+    ));
+    await tester.pumpAndSettle();
+
+    final colorScheme =
+        Theme.of(tester.element(find.byType(TodoMonthCalendarView)))
+            .colorScheme;
+    final gray = colorScheme.onSurface.withValues(alpha: 0.38);
+
+    // 当日（8/15）：常规加粗 + 单元格描边。
+    final today = tester.widget<Text>(find.text('15'));
+    expect(today.style?.fontWeight, FontWeight.bold);
+    expect(today.style?.color, colorScheme.onSurface);
+    final outlined = tester.widget<Container>(
+      find
+          .ancestor(
+            of: find.text('15'),
+            matching: find.byWidgetPredicate(
+              (w) =>
+                  w is Container &&
+                  (w.decoration as BoxDecoration?)?.border != null,
+            ),
+          )
+          .first,
+    );
+    final todayBorder = (outlined.decoration! as BoxDecoration).border as Border;
+    expect(todayBorder.top.color, colorScheme.primary);
+
+    // 当月普通日期（8/10）：常规加粗、无描边。
+    final normal = tester.widget<Text>(find.text('10'));
+    expect(normal.style?.fontWeight, FontWeight.bold);
+    expect(normal.style?.color, colorScheme.onSurface);
+    expect(
+      find.ancestor(
+        of: find.text('10'),
+        matching: find.byWidgetPredicate(
+          (w) =>
+              w is Container &&
+              (w.decoration as BoxDecoration?)?.border != null,
+        ),
+      ),
+      findsNothing,
+    );
+
+    // 非当月补位日期：浅灰加粗（数量 = 网格总格数 - 当月天数）。
+    final firstDay = DateTime(2026, 8, 1);
+    final leadingBlanks = firstDay.weekday - 1;
+    final daysInMonth = DateTime(2026, 9, 0).day; // 8 月有 31 天
+    final totalCells = ((leadingBlanks + daysInMonth) / 7).ceil() * 7;
+    final fillCount = totalCells - daysInMonth;
+    final grayTexts = tester
+        .widgetList<Text>(find.byType(Text))
+        .where((t) => t.style?.color == gray)
+        .toList();
+    expect(grayTexts, hasLength(fillCount));
+    for (final t in grayTexts) {
+      expect(t.style?.fontWeight, FontWeight.bold);
+    }
   });
 
   testWidgets('宽屏显示日期转跳按钮，点击弹出日期选择器', (tester) async {

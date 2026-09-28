@@ -44,10 +44,11 @@
 |------|------|--------|
 | `StickyNotesConfig` | 模块级根配置：分类列表、默认排序方式 | 是（`module_sticky_notes_config`） |
 | `NoteCategory` | 单个分类：名称、颜色、显示顺序 | 嵌入 `StickyNotesConfig` |
-| `StickyNote` | 单个便签：标题、富文本正文、图片附件、分类、置顶、创建/更新时间 | 是（`module_sticky_notes_notes`） |
-| `NoteBlock` | 富文本块（sealed class）：段落/标题/列表/引用等 | 嵌入 `StickyNote.content` |
-| `NoteInline` | 行内元素：文本 + 粗体/斜体/删除线 | 嵌入 `NoteBlock` |
-| `NoteImageAttachment` | 正文图片附件：base64 数据、创建时间 | 嵌入 `StickyNote.images` |
+| `StickyNote` | 单个便签：标题、图文正文、分类、置顶、创建/更新时间 | 是（`module_sticky_notes_notes`） |
+| `NoteBlock` | 正文块（sealed class）：文本块 / 图片块 | 嵌入 `StickyNote.content` |
+| `ImageBlock` | 图片块：内联图片载荷，与文本块混排 | 嵌入 `StickyNote.content` |
+| `NoteInline` | 行内元素：文本 + 加粗/斜体/下划线/删除线/绝对字号/自定义颜色 | 嵌入 `NoteBlock` |
+| `NoteImageAttachment` | 图片载荷：base64 数据、创建时间 | 嵌入 `ImageBlock` |
 | `NoteSummary` | 首页摘要聚合：总数、置顶数、分类数 | 不持久化，运行时聚合 |
 
 ### 2.2 StickyNotesConfig
@@ -83,8 +84,7 @@ class NoteCategory {
 class StickyNote {
   final String id;
   final String title;              // 标题（主要内容），必填
-  final List<NoteBlock> content;   // 富文本正文
-  final List<NoteImageAttachment> images;  // 正文图片附件
+  final List<NoteBlock> content;   // 图文正文（图片为其中的 ImageBlock）
   final String? categoryId;        // 关联 NoteCategory.id，可为 null
   final bool isPinned;             // 是否置顶
   final DateTime? pinnedAt;        // 置顶时间（置顶排序用），非置顶为 null
@@ -94,41 +94,28 @@ class StickyNote {
 ```
 
 - `title`：必填；空标题提交时拦截。
-- `content`：富文本正文，块列表（见 §2.5）。
+- `content`：图文正文，块列表（见 §2.5）；图片以 `ImageBlock` 内联其中。
 - `isPinned = true` 时 `pinnedAt` 记录置顶时刻，用于置顶便签内部排序。
 
 ### 2.5 NoteBlock（富文本块，sealed class）
 
 ```dart
 sealed class NoteBlock {
-  final List<NoteInline> inlines;  // 行内元素
+  final List<NoteInline> inlines;  // 行内元素（图片块恒为空）
 }
 
-/// 普通段落
+/// 文本块（普通段落）
 final class ParagraphBlock extends NoteBlock {}
 
-/// 标题（h1 / h2 / h3）
-final class HeadingBlock extends NoteBlock {
-  final int level; // 1~3
+/// 图片（图文混排）
+final class ImageBlock extends NoteBlock {
+  final NoteImageAttachment attachment;
 }
-
-/// 无序列表项
-final class BulletBlock extends NoteBlock {}
-
-/// 有序列表项
-final class NumberedBlock extends NoteBlock {}
-
-/// 待办清单项
-final class CheckListBlock extends NoteBlock {
-  final bool checked;
-}
-
-/// 引用
-final class QuoteBlock extends NoteBlock {}
 ```
 
-- 块类型即文档，不同格式为独立 `final class`，便于 JSON `type` discriminator 反序列化与渲染分发。
-- 空块（`inlines` 为空段落）在渲染时忽略。
+- 正文不区分块类型（无标题/列表/引用等），由「文本块 + 图片块」按顺序组成，一个便签对应一段连续图文内容；`type` discriminator 保留用于反序列化与后续扩展。
+- 空文本块在渲染时忽略；`ImageBlock` 无行内文本，渲染时恒可见。
+- 兼容旧数据：取消块类型前写入的 `heading` / `bullet` / `numbered` / `checkList` / `quote` 在读取时统一降级为文本块并保留文本。
 
 ### 2.6 NoteInline
 
@@ -137,12 +124,16 @@ class NoteInline {
   final String text;          // 文本内容
   final bool bold;            // 粗体
   final bool italic;          // 斜体
+  final bool underline;       // 下划线
   final bool strikethrough;   // 删除线
+  final double? fontSize;     // 绝对字号（pt，8 ~ 72），null 为继承 textTheme
+  final int? colorValue;      // 自定义颜色（ARGB 整数），null 为继承 colorScheme
   final String? link;         // 链接地址（可选）
 }
 ```
 
-- 行内样式通过布尔位组合表达，渲染时映射到 `TextSpan` 样式。
+- 行内样式通过布尔位与绝对字号 / 自定义色值表达，渲染时映射到 `TextSpan` 样式。一个文本块由若干 `NoteInline` 顺序拼接而成（runs 模型）。
+- 字号为绝对 pt（选择器范围 8 ~ 72，滑块步长 1）；颜色取自常用色板（参考 Office 主题色板，10 基色 × 6 档明暗）。未自定义时分别继承 `textTheme` 基线字号与 `colorScheme` 前景色。
 
 ### 2.7 NoteSortMode
 
@@ -166,7 +157,7 @@ class NoteImageAttachment {
 }
 ```
 
-- 图片随便签正文展示与编辑；以 base64 内嵌 JSON 随 `module_sticky_notes_notes` 一并存储。
+- 作为 `ImageBlock` 的载荷内联于正文；以 base64 内嵌 JSON，随 `module_sticky_notes_notes` 一并存储。
 
 ### 2.9 NoteSummary（运行时聚合）
 
@@ -214,8 +205,10 @@ class NoteSummary {
 
 ### 3.3 详情/编辑页
 
-- 展示与编辑：标题（必填）、富文本正文（段落/标题/列表/引用/待办清单 + 行内粗体/斜体/删除线）、图片附件（添加/删除/预览）、分类选择、置顶开关。
-- 富文本编辑：提供工具栏（加粗、斜体、删除线、标题、列表、引用、待办清单、插入图片）。
+- 展示与编辑：标题（必填）、图文正文（连续文本 + 内联图片）、分类选择、置顶开关。
+- 正文编辑区为**独立的填充容器**（`surfaceContainerLow` 填充 + `outlineVariant` 描边 + 12dp 圆角），与页面背景区分；文本为无边框多行输入，图片块内联其间。
+- 正文不设块类型，也不提供「添加段落 / 块格式 / 删除本块」等块级操作入口（回车即为换行）。
+- 富文本工具栏：加粗、斜体、下划线、删除线（作用于**选区**）、字号选择器（滑块 + 数值输入框，8 ~ 72 pt）、字体颜色取色盘（常用色板 + 默认），以及「插入图片」（在当前块后插入图片块并补一个空文本块）。
 - 保存按钮：`FilledButton`；取消/返回：`TextButton`。
 - 空标题提交时提示错误，不允许保存。
 
@@ -227,7 +220,7 @@ class NoteSummary {
 
 ### 3.5 主题与色彩
 
-- 所有颜色来自 `Theme.of(context).colorScheme`。
+- 界面颜色默认取自 `Theme.of(context).colorScheme`；正文文字颜色为用户可自定义项（常用色板），未自定义时继承 `colorScheme`。
 - 置顶标识使用 `colorScheme.primary`。
 - 分类颜色：自定义分类从 `ColorScheme` 次要色板循环分配。
 - 已删除分类的便签显示“无分类”（`onSurfaceVariant`）。
@@ -250,15 +243,19 @@ class NoteSummary {
 - 删除分类：该分类下便签 `categoryId` 置为 null。
 - 分类排序：按 `displayOrder` 升序。
 
-### 4.3 图片附件规则
+### 4.3 图片内联规则
 
+- 图片为正文中的一个独立块（`ImageBlock`），与文本块按顺序上下混排，不作为独立附件区。
+- 图片以 base64 内嵌，随正文顺序持久化与同步；删除块即删除图片，删除便签时一并移除。
 - 每张图片限制尺寸/数量，避免数据量与 JSON 体积过大（设计阶段定具体阈值）。
-- 图片随便签存储与同步，删除便签时一并移除。
+- 兼容旧格式：读取到旧版 `StickyNote.images` 时自动迁移为正文末尾的图片块，再次保存后落为新格式。
 
 ### 4.4 富文本规则
 
 - 正文为空时保存为默认空段落（渲染时显示空内容占位）。
 - 富文本渲染用 Flutter 内置 `Text` / `RichText` 实现，不引入第三方富文本渲染包。
+- 行内样式以**选区**为单位应用；无选区（折叠光标）时作用于光标所在片段；块内无文本时暂存样式供随后输入使用。
+- 字号以绝对 pt 存储（选择器范围 8 ~ 72）；颜色以 ARGB 整数存储，取自常用色板。二者的「默认」表示继承 `textTheme` / `colorScheme`，因此主题切换时未自定义部分仍自适应。
 
 ---
 
@@ -285,7 +282,7 @@ class NoteSummary {
 |------|------|------|----------|
 | 底座 `StorageService` | 数据持久化 | - | 通过 `initialize(storage)` 注入 |
 | 底座 `ResponsiveBuilder` / `Adaptive*` | 布局与组件 | - | 模块内复用 |
-| 自研 | 便签模型、富文本解析/渲染、分类、排序、图片附件 | - | 模块内部实现 |
+| 自研 | 便签模型、富文本解析/渲染（含选区级行内样式）、分类、排序、图片内联 | - | 模块内部实现 |
 
 - **不新增第三方依赖**（富文本、图片选择等均用 Flutter 内置能力实现）；如需新增依赖须经 OWNER 确认。
 

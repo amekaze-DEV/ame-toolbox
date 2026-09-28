@@ -59,7 +59,7 @@ class TodoListModule implements ModuleContract {
     // 统计活跃待办数（未归档：一次性事项 + 循环模板），供首页卡片摘要展示。
     final listRepository = TodoListRepository(storageService: storage);
     final items = await listRepository.loadAll();
-    _activeCount = items.where((e) => !e.isArchived).length;
+    _activeCount = items.where((e) => !e.isArchived && !e.isCompleted).length;
 
     final holidayController = HolidayDataController(
       service: HolidayDataService(),

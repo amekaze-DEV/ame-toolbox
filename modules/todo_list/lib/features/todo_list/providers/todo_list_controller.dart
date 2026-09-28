@@ -43,23 +43,24 @@ class TodoListController extends ChangeNotifier {
   /// 全部待办项（含模板、实例、历史）。
   List<TodoItem> get items => List.unmodifiable(_items);
 
-  /// 在运转的待办（未归档）：一次性事项 + 循环模板。
+  /// 在运转的待办（未归档且未完成）：一次性事项 + 循环模板。
   ///
   /// 排除每日自动生成的循环实例（仅完成单日、事项仍在循环）。
   List<TodoItem> get activeItems {
     final templateIds = _items.where((e) => e.isRecurring).map((e) => e.id).toSet();
     return _items
-        .where((e) => !e.isArchived && !_isOccurrence(e, templateIds))
+        .where((e) =>
+            !e.isArchived && !e.isCompleted && !_isOccurrence(e, templateIds))
         .toList();
   }
 
-  /// 待办历史（已关闭）：一次性事项完成 + 循环模板整系列关闭。
+  /// 待办历史（已完成）：一次性事项完成 + 循环模板整系列关闭。
   ///
   /// 循环单日完成、模板仍在循环的实例（id 以模板 id 为前缀）不记录。
   List<TodoItem> get historyItems {
     final templateIds = _items.where((e) => e.isRecurring).map((e) => e.id).toSet();
     return _items
-        .where((e) => e.isArchived && !_isOccurrence(e, templateIds))
+        .where((e) => e.isCompleted && !_isOccurrence(e, templateIds))
         .toList();
   }
 
@@ -133,7 +134,6 @@ class TodoListController extends ChangeNotifier {
         : item.copyWith(
             isCompleted: true,
             completedAt: now,
-            isArchived: true,
           );
     _items = [..._items]..[index] = updated;
     await _persistAndReschedule();
@@ -141,8 +141,10 @@ class TodoListController extends ChangeNotifier {
 
   /// 完成指定日期的当次事项（销项）。
   ///
-  /// - 一次性：完成并归档该事项本身；
-  /// - 循环模板：仅完成并归档该日期的实例，模板保持开启，循环继续。
+  /// 完成项保留在列表中，标记完成并排至列表底部；历史按"已完成"体现。
+  ///
+  /// - 一次性：完成该事项本身；
+  /// - 循环模板：仅完成该日期的实例，模板保持开启，循环继续。
   Future<void> completeOccurrence(TodoItem item, DateTime day) async {
     final now = DateTime.now();
     if (item.isRecurring) {
@@ -157,7 +159,6 @@ class TodoListController extends ChangeNotifier {
         ..[index] = _items[index].copyWith(
           isCompleted: true,
           completedAt: now,
-          isArchived: true,
         );
     } else {
       _items = [
@@ -166,7 +167,6 @@ class TodoListController extends ChangeNotifier {
               ? e.copyWith(
                   isCompleted: true,
                   completedAt: now,
-                  isArchived: true,
                 )
               : e,
       ];
@@ -174,7 +174,7 @@ class TodoListController extends ChangeNotifier {
     await _persistAndReschedule();
   }
 
-  /// 关闭循环待办（整系列销项）：归档模板及其全部实例，归入历史。
+  /// 关闭循环待办（整系列销项）：标记模板及其全部实例完成。
   Future<void> closeRecurring(String templateId) async {
     final now = DateTime.now();
     _items = [
@@ -183,7 +183,6 @@ class TodoListController extends ChangeNotifier {
           e.copyWith(
             isCompleted: true,
             completedAt: now,
-            isArchived: true,
           )
         else
           e,

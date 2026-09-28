@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:todo_list_module/debug/memory_storage_service.dart';
+import '../helpers/memory_storage_service.dart';
 import 'package:todo_list_module/features/todo_list/data/todo_list_repository.dart';
 import 'package:todo_list_module/features/todo_list/models/todo_item.dart';
 import 'package:todo_list_module/features/todo_list/models/todo_priority.dart';

@@ -195,7 +195,7 @@ class _HomeContent extends ConsumerWidget {
     final entryCard = module.buildEntryCard(
       context,
       ref,
-      () => _selectModule(ref, index + 1),
+      () => _selectModuleForModule(ref, module),
     );
     return ReorderableDelayedDragStartListener(
       key: ValueKey(module.definition.id),
@@ -205,7 +205,7 @@ class _HomeContent extends ConsumerWidget {
         child: entryCard ??
             _ModuleCardListItem(
               module: module,
-              onTap: () => _selectModule(ref, index + 1),
+              onTap: () => _selectModuleForModule(ref, module),
             ),
       ),
     );
@@ -247,12 +247,12 @@ class _HomeContent extends ConsumerWidget {
               final entryCard = module.buildEntryCard(
                 context,
                 ref,
-                () => _selectModule(ref, index + 1),
+                () => _selectModuleForModule(ref, module),
               );
               return entryCard ??
                   _ModuleCardListItem(
                     module: module,
-                    onTap: () => _selectModule(ref, index + 1),
+                    onTap: () => _selectModuleForModule(ref, module),
                   );
             },
             feedbackBuilder: (context, index) =>
@@ -357,7 +357,11 @@ class _HomeContent extends ConsumerWidget {
     );
   }
 
-  void _selectModule(WidgetRef ref, int navIndex) {
+  void _selectModuleForModule(WidgetRef ref, ModuleContract module) {
+    // 导航栏始终按竖屏排序（enabledModules）定位模块；横屏首页瀑布流使用
+    // 独立的横屏排序，若直接以列表位置计算会因排序不一致而转跳错误模块。
+    final controller = ref.read(moduleControllerProvider);
+    final navIndex = controller.enabledModules.indexOf(module) + 1;
     ref.read(_selectedNavIndexProvider.notifier).state = navIndex;
   }
 }

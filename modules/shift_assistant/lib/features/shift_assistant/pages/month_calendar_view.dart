@@ -955,7 +955,6 @@ class _DayColumn extends StatelessWidget {
                           height: 1.0,
                           color: _dayLabelColor(
                             dayInfo,
-                            markerColor,
                             isCurrentMonth,
                             isToday,
                             colorScheme,
@@ -1042,23 +1041,34 @@ class _DayColumn extends StatelessWidget {
     return '${info.date.day}';
   }
 
-  /// 公历日期文字颜色：休/班用节假日标记色突出，其余按月份/今日区分。
+  /// 公历日期文字颜色：调休上班显示红色、调休/假日休息显示绿色，
+  /// 其余按月份/今日区分。
   Color _dayLabelColor(
     DayInfo info,
-    Color markerColor,
     bool isCurrentMonth,
     bool isToday,
     ColorScheme colorScheme,
   ) {
     final holiday = info.holiday;
-    if (holiday != null && (holiday.isHoliday || holiday.isWorkday)) {
-      return markerColor;
+    if (holiday != null && holiday.isWorkday) {
+      return colorScheme.error;
+    }
+    if (holiday != null && holiday.isHoliday) {
+      return _restGreen(colorScheme);
     }
     if (!isCurrentMonth) return colorScheme.outline;
     return isToday ? colorScheme.primary : colorScheme.onSurface;
   }
 
-  /// 获取日期单元格附加标记的颜色。
+  /// 假日/调休休息日使用的绿色：明暗主题取不同明度以保证可读性。
+  static Color _restGreen(ColorScheme colorScheme) {
+    return colorScheme.brightness == Brightness.dark
+        ? const Color(0xFF81C784)
+        : const Color(0xFF2E7D32);
+  }
+
+  /// 获取日期单元格附加标记的颜色：调休上班红、调休/假日休息绿，
+  /// 节气用 tertiary，其余用次要色。
   Color _dayMarkerColor(BuildContext context, DayInfo info) {
     final colorScheme = Theme.of(context).colorScheme;
     final holiday = info.holiday;
@@ -1066,7 +1076,7 @@ class _DayColumn extends StatelessWidget {
       return colorScheme.error;
     }
     if (holiday != null && holiday.isHoliday) {
-      return colorScheme.error;
+      return _restGreen(colorScheme);
     }
     if (info.solarTerm != null && info.solarTerm!.isNotEmpty) {
       return colorScheme.tertiary;

@@ -25,10 +25,12 @@ class TodoQueryService {
   /// 按优先级排序（不改动原列表）。
   ///
   /// [dailyTop] 为 true 时，日常事项整体置顶，其余仍按默认顺序；
-  /// 同优先级按创建时间升序。
+  /// 同优先级按创建时间升序；已完成事项始终排到列表最下方。
   List<TodoItem> sortByPriority(List<TodoItem> items, {bool dailyTop = false}) {
     final sorted = List<TodoItem>.of(items);
     sorted.sort((a, b) {
+      // 已完成事项固定置底。
+      if (a.isCompleted != b.isCompleted) return a.isCompleted ? 1 : -1;
       if (dailyTop) {
         if (a.priority == TodoPriority.daily && b.priority != TodoPriority.daily) {
           return -1;
@@ -62,7 +64,7 @@ class TodoQueryService {
     final todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
     var total = 0, pending = 0, todayCount = 0, overdue = 0;
     for (final item in items) {
-      if (item.isArchived) continue; // 历史不计入
+      if (item.isArchived || item.isCompleted) continue; // 历史/已完成不计入
       total++;
       final isPending = !item.isCompleted;
       if (isPending) pending++;

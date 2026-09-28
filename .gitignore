@@ -56,3 +56,6 @@ userfile/
 
 # Windows reserved device-name artifact
 con
+
+# TRAE IDE config
+.trae/

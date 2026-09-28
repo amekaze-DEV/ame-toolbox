@@ -374,6 +374,7 @@ class TodoListPage extends ConsumerWidget {
   /// 完成确认销项：弹窗确认后销项。
   ///
   /// 循环类型仅销项「所选日期」的当次实例；一次性事项销项本身。
+  /// 完成后事项保留在列表中，附加完成标记并移动到列表最下方。
   void _confirmComplete(
     BuildContext context,
     WidgetRef ref,
@@ -387,7 +388,7 @@ class TodoListPage extends ConsumerWidget {
         content: Text(
           item.isRecurring
               ? '确认完成"${item.title}"本次事项吗？\n仅销项本次，循环将继续。'
-              : '确认完成"${item.title}"吗？\n完成后将销项并移入待办历史。',
+              : '确认完成"${item.title}"吗？\n完成后将标记为已完成并移至列表底部。',
         ),
         actions: [
           TextButton(
@@ -482,7 +483,7 @@ class TodoListPage extends ConsumerWidget {
   /// 当月日历网格内每天的最高优先级映射（用于日历标记）。
   ///
   /// 优先级顺序固定：最高 > 高 > 中 > 一般 > 日常，日常为最低。
-  /// 覆盖上月/下月补位日期，循环模板：若某日的实例已销项（归档），则该日不再标记。
+  /// 覆盖上月/下月补位日期，循环模板：若某日的实例已销项（完成），则该日不再标记。
   static Map<DateTime, TodoPriority> _markedForMonth(
     TodoRecurrenceResolver resolver,
     List<TodoItem> items,
@@ -493,12 +494,12 @@ class TodoListPage extends ConsumerWidget {
     final end = DateTime(gridEnd.year, gridEnd.month, gridEnd.day, 23, 59, 59);
     final marked = <DateTime, TodoPriority>{};
     for (final item in items) {
-      if (item.isArchived) continue;
+      if (item.isArchived || item.isCompleted) continue;
       for (final d in resolver.resolve(item, start, end)) {
         final day = DateTime(d.year, d.month, d.day);
         if (item.isRecurring &&
             items.any((e) =>
-                e.id == '${item.id}_${_ymd(d)}' && e.isArchived)) {
+                e.id == '${item.id}_${_ymd(d)}' && e.isCompleted)) {
           continue;
         }
         // 取当日最高优先级（枚举声明顺序即由高到低）。
