@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:ametoolbox/core/models/module_summary.dart';
+import 'package:ametoolbox/shared/utils/app_text_styles.dart';
 import 'package:ametoolbox/shared/utils/module_icon_mapper.dart';
 
 /// 主页模块摘要卡片。
@@ -46,7 +47,7 @@ class ModuleCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       name,
-                      style: textTheme.titleMedium,
+                      style: AppTextStyles.cardTitle(context),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),

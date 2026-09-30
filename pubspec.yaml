@@ -76,6 +76,10 @@ dependencies:
   todo_list_module:
     path: modules/todo_list
 
+  # 便签子模块
+  sticky_notes_module:
+    path: modules/sticky_notes
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

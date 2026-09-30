@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../data/sticky_notes_config_repository.dart';
+import '../data/sync_snapshots.dart';
 import '../models/note_category.dart';
 import '../models/note_sort_mode.dart';
 import '../models/sticky_notes_config.dart';
@@ -27,14 +28,19 @@ class StickyNotesConfigController extends ChangeNotifier {
   Future<void> load() async {
     _config = await _repository.load();
     _loaded = true;
+    latestConfigSnapshot = _config;
     notifyListeners();
   }
 
   Future<void> _persist(StickyNotesConfig next) async {
     _config = next;
+    latestConfigSnapshot = next;
     await _repository.save(next);
     notifyListeners();
   }
+
+  /// 用外部配置整体替换（同步导入用，spec §5）。
+  Future<void> replaceConfig(StickyNotesConfig config) => _persist(config);
 
   /// 新增自定义分类（id 使用 `category_` 前缀，spec §2.3）。
   Future<void> addCategory(String name, {required int colorValue}) async {
@@ -84,6 +90,7 @@ class StickyNotesConfigController extends ChangeNotifier {
   /// 重置为默认配置。
   Future<void> reset() async {
     _config = await _repository.reset();
+    latestConfigSnapshot = _config;
     notifyListeners();
   }
 }

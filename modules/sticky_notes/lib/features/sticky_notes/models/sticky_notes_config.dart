@@ -36,8 +36,9 @@ class StickyNotesConfig {
         'Unsupported StickyNotesConfig schema version: $schemaVersion');
     return StickyNotesConfig(
       categories: switch (json['categories'] as List<dynamic>?) {
+        // 仅缺省时（旧数据 / 首次运行）回退内置分类；
+        // 显式空列表表示用户已删除全部分类，需原样保留（分类均可删除）。
         null => defaultCategories,
-        final list when list.isEmpty => defaultCategories,
         final list => list
             .map((e) => NoteCategory.fromJson(e as Map<String, dynamic>))
             .toList(),

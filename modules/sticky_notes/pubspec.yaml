@@ -1,5 +1,5 @@
 name: sticky_notes_module
-description: "便签模块 - 临时独立调试应用（合并主线后清理临时入口）"
+description: "便签模块 - 记录、分类、置顶与附件管理"
 publish_to: 'none'
 
 version: 0.1.0+1

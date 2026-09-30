@@ -15,6 +15,7 @@ import 'package:ametoolbox/features/home/module_card_widget.dart';
 import 'package:ametoolbox/features/home/nav_item.dart';
 import 'package:ametoolbox/features/home/reorderable_masonry_sliver.dart';
 import 'package:ametoolbox/features/settings/settings_page.dart';
+import 'package:ametoolbox/shared/utils/app_text_styles.dart';
 import 'package:ametoolbox/shared/widgets/adaptive_button.dart';
 
 /// 应用主页与自适应导航栏。
@@ -399,7 +400,7 @@ class _CalculatorDragFeedbackCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     '多功能计算器',
-                    style: textTheme.titleMedium,
+                    style: AppTextStyles.cardTitle(context),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -447,9 +448,7 @@ class _CalculatorDragFeedbackCard extends StatelessWidget {
             const Divider(height: 24),
             Text(
               '最近计算',
-              style: textTheme.titleSmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+              style: AppTextStyles.sectionTitle(context),
             ),
           ],
         ),

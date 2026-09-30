@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sticky_notes_module/features/sticky_notes/models/note_block.dart';
+import 'package:sticky_notes_module/features/sticky_notes/models/note_inline.dart';
 import 'package:sticky_notes_module/features/sticky_notes/models/note_sort_mode.dart';
 import 'package:sticky_notes_module/features/sticky_notes/models/sticky_note.dart';
 import 'package:sticky_notes_module/features/sticky_notes/services/note_query_service.dart';
@@ -7,6 +9,7 @@ import 'package:sticky_notes_module/features/sticky_notes/services/note_query_se
 StickyNote buildNote(
   String id, {
   String? title,
+  String? body,
   DateTime? createdAt,
   DateTime? updatedAt,
   String? categoryId,
@@ -17,6 +20,11 @@ StickyNote buildNote(
   return StickyNote(
     id: id,
     title: title ?? id,
+    content: body == null
+        ? const []
+        : [
+            ParagraphBlock(inlines: [NoteInline(text: body)]),
+          ],
     categoryId: categoryId,
     isPinned: isPinned,
     pinnedAt: pinnedAt,
@@ -124,6 +132,73 @@ void main() {
       ];
       final result = service.query(notes, mode: NoteSortMode.updatedDesc);
       expect(result.length, 2);
+    });
+  });
+
+  group('NoteQueryService.search', () {
+    test('关键字为空返回空列表（调用方需回退 query）', () {
+      final notes = [buildNote('a', title: '甲')];
+      final hits = service.search(
+        notes,
+        mode: NoteSortMode.updatedDesc,
+        keyword: '  ',
+      );
+      expect(hits, isEmpty);
+    });
+
+    test('标题与正文命中均可检索', () {
+      final notes = [
+        buildNote('t', title: '会议纪要'),
+        buildNote('b', title: '无关', body: '会议记录'),
+        buildNote('n', title: '无关'),
+      ];
+
+      final hits = service.search(
+        notes,
+        mode: NoteSortMode.updatedDesc,
+        keyword: '会议',
+      );
+      expect(hits.map((e) => e.note.id).toList(), ['t', 'b']);
+    });
+
+    test('与分类筛选叠加生效', () {
+      final notes = [
+        buildNote('w', title: '会议', categoryId: 'work'),
+        buildNote('l', title: '会议', categoryId: 'life'),
+      ];
+
+      final hits = service.search(
+        notes,
+        mode: NoteSortMode.updatedDesc,
+        categoryId: 'work',
+        keyword: '会议',
+      );
+      expect(hits.map((e) => e.note.id).toList(), ['w']);
+    });
+
+    test('同分时沿用排序兜底顺序（置顶优先）', () {
+      final notes = [
+        buildNote('n', title: '会议', updatedAt: DateTime(2026, 9, 9)),
+        buildNote('p',
+            title: '会议', isPinned: true, pinnedAt: DateTime(2026, 9, 1)),
+      ];
+
+      final hits = service.search(
+        notes,
+        mode: NoteSortMode.updatedDesc,
+        keyword: '会议',
+      );
+      expect(hits.map((e) => e.note.id).toList(), ['p', 'n']);
+    });
+
+    test('模糊匹配：子序列关键字可命中', () {
+      final notes = [buildNote('a', title: '工作汇报')];
+      final hits = service.search(
+        notes,
+        mode: NoteSortMode.updatedDesc,
+        keyword: '工报',
+      );
+      expect(hits.single.titleMatches, [0, 3]);
     });
   });
 }

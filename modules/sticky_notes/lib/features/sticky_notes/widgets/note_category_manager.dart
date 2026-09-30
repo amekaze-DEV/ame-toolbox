@@ -8,10 +8,7 @@ import '../models/note_category.dart';
 import '../providers/sticky_notes_config_provider.dart';
 import '../providers/sticky_notes_provider.dart';
 
-/// 内置分类 id（不可删除，spec §2.3）。
-const _builtInCategoryIds = <String>{'work', 'life', 'other'};
-
-/// 候选分类颜色（取自 Material 调色板，避免硬编码主题色）。
+/// 候选分类颜色（18 色，取自 Material 调色板，6 列排布）。
 const _presetColors = <int>[
   0xFF1565C0, // 蓝
   0xFF2D7D46, // 绿
@@ -19,6 +16,18 @@ const _presetColors = <int>[
   0xFF00897B, // 青
   0xFFC62828, // 红
   0xFFEF6C00, // 橙
+  0xFFAD1457, // 玫红
+  0xFF4527A0, // 深紫
+  0xFF283593, // 靛蓝
+  0xFF0277BD, // 浅蓝
+  0xFF00838F, // 蓝绿
+  0xFF558B2F, // 草绿
+  0xFF9E9D24, // 橄榄
+  0xFFF9A825, // 黄
+  0xFFD84315, // 深橙
+  0xFF4E342E, // 棕
+  0xFF37474F, // 蓝灰
+  0xFF424242, // 灰
 ];
 
 /// 分类管理器：新增、编辑、删除、排序分类（spec §3.4 / §4.2）。
@@ -52,7 +61,6 @@ class NoteCategoryManager extends ConsumerWidget {
               .reorderCategories(oldIndex, newIndex),
           itemBuilder: (context, index) {
             final category = categories[index];
-            final deletable = !_builtInCategoryIds.contains(category.id);
             return AdaptiveListTile(
               key: ValueKey(category.id),
               leading: Container(
@@ -73,12 +81,11 @@ class NoteCategoryManager extends ConsumerWidget {
                     onPressed: () =>
                         _openEditor(context, ref, category: category),
                   ),
-                  if (deletable)
-                    AdaptiveIconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      tooltip: '删除分类',
-                      onPressed: () => _confirmDelete(context, ref, category),
-                    ),
+                  AdaptiveIconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: '删除分类',
+                    onPressed: () => _confirmDelete(context, ref, category),
+                  ),
                 ],
               ),
             );
@@ -94,9 +101,16 @@ class NoteCategoryManager extends ConsumerWidget {
     WidgetRef ref, {
     NoteCategory? category,
   }) async {
+    final target = category;
     final result = await showDialog<({String name, int color})>(
       context: context,
-      builder: (_) => _CategoryEditorDialog(category: category),
+      builder: (_) => _CategoryEditorDialog(
+        category: target,
+        // 编辑既有分类时提供删除入口（新增分类无删除）。
+        onDelete: target == null
+            ? null
+            : () => _confirmDelete(context, ref, target),
+      ),
     );
     if (result == null) return;
 
@@ -110,8 +124,8 @@ class NoteCategoryManager extends ConsumerWidget {
     }
   }
 
-  /// 删除分类确认；确认后同时将分类下便签置为无分类（spec §4.2）。
-  Future<void> _confirmDelete(
+  /// 删除分类确认；返回是否已删除。确认后同时将分类下便签置为无分类（spec §4.2）。
+  Future<bool> _confirmDelete(
     BuildContext context,
     WidgetRef ref,
     NoteCategory category,
@@ -138,18 +152,22 @@ class NoteCategoryManager extends ConsumerWidget {
         ],
       ),
     );
-    if (confirmed != true) return;
+    if (confirmed != true) return false;
 
     await ref.read(stickyNotesConfigProvider).deleteCategory(category.id);
     await ref.read(stickyNotesProvider).clearCategory(category.id);
+    return true;
   }
 }
 
 /// 分类新增 / 编辑对话框。
 class _CategoryEditorDialog extends StatefulWidget {
-  const _CategoryEditorDialog({this.category});
+  const _CategoryEditorDialog({this.category, this.onDelete});
 
   final NoteCategory? category;
+
+  /// 删除当前分类（返回是否已删除）；为 null 时不展示删除入口。
+  final Future<bool> Function()? onDelete;
 
   @override
   State<_CategoryEditorDialog> createState() => _CategoryEditorDialogState();
@@ -170,6 +188,15 @@ class _CategoryEditorDialogState extends State<_CategoryEditorDialog> {
   void dispose() {
     _nameController.dispose();
     super.dispose();
+  }
+
+  /// 请求删除当前分类；确认删除成功后关闭编辑对话框。
+  Future<void> _handleDelete() async {
+    final onDelete = widget.onDelete;
+    if (onDelete == null) return;
+    final deleted = await onDelete();
+    if (!mounted || !deleted) return;
+    Navigator.of(context).pop();
   }
 
   @override
@@ -226,6 +253,14 @@ class _CategoryEditorDialogState extends State<_CategoryEditorDialog> {
         ],
       ),
       actions: [
+        if (widget.onDelete != null)
+          AdaptiveButton(
+            variant: AdaptiveButtonVariant.text,
+            icon: Icons.delete_outline,
+            label: '删除',
+            style: TextButton.styleFrom(foregroundColor: colorScheme.error),
+            onPressed: _handleDelete,
+          ),
         AdaptiveButton(
           variant: AdaptiveButtonVariant.text,
           label: '取消',

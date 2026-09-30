@@ -193,7 +193,7 @@ dependencies:
 | `device_info_plus` 取内存部分 Windows 版本抛异常 | 中 | 临时应用用 `FakeDeviceInfoProvider` 规避 |
 | 自研富文本渲染能力有限（无表格等复杂排版） | 中 | 需求边界为轻量富文本；文档记录取舍 |
 | 横屏两列网格 + 可变高度卡片实现复杂度 | 中 | 用 `ResponsiveBuilder` 分层；组件拆分；参照底座 Masonry 思路 |
-| 合并时 `defaultModules` 是否含 `sticky_notes` 不确定 | 中 | 合并前 OWNER 确认底座配置 |
+| 合并时 `defaultModules` 是否含 `sticky_notes` 不确定 | 中 | 合并前 OWNER 确认底座配置（**已闭环**：底座仅有 `id: 'notes'` 槽位，与模块定义 id 不一致；经 OWNER 授权在 P8 中校正为 `'sticky_notes'`，图标仍复用 `notes` 映射） |
 | 删除临时壳后如需再独立调试 | 低 | 保留 docs 记录重建步骤 |
 
 ---

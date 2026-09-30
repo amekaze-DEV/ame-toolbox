@@ -2,6 +2,31 @@ import 'dart:math';
 
 import '../models/note_inline.dart';
 
+/// 文本变更区间（由最长公共前缀 / 后缀定位）。
+///
+/// - [start]：变更起点（新文本中的下标）；
+/// - [oldEnd]：旧文本中的变更终点（不含），旧文本按 `[start, oldEnd)` 删除；
+/// - [inserted]：新插入的文本（可为空，表示纯删除）。
+class TextDiff {
+  const TextDiff({
+    required this.start,
+    required this.oldEnd,
+    required this.inserted,
+  });
+
+  /// 变更起点。
+  final int start;
+
+  /// 旧文本变更终点（不含）。
+  final int oldEnd;
+
+  /// 新插入文本。
+  final String inserted;
+
+  /// 插入结束位置（新文本中的下标）。
+  int get end => start + inserted.length;
+}
+
 /// 行内 runs 纯函数引擎。
 ///
 /// 以 `List<NoteInline>` 作为「文本 + 样式」的唯一真源，把文本编辑与
@@ -86,16 +111,8 @@ abstract final class NoteInlineRuns {
     return normalize([...left, ...middle, ...right]);
   }
 
-  /// 按文本变更（`oldText` → `newText`）重建 runs，保留未受影响部分的样式。
-  ///
-  /// 通过最长公共前缀 / 后缀定位被替换区间，新插入文本继承该位置原有样式。
-  static List<NoteInline> replaceTextRange(
-    List<NoteInline> runs,
-    String oldText,
-    String newText,
-  ) {
-    if (oldText == newText) return runs;
-
+  /// 定位 `oldText` → `newText` 的变更区间（最长公共前缀 / 后缀，互不重叠）。
+  static TextDiff diffOf(String oldText, String newText) {
     final maxPrefix = min(oldText.length, newText.length);
     var prefix = 0;
     while (prefix < maxPrefix &&
@@ -109,13 +126,31 @@ abstract final class NoteInlineRuns {
             newText.codeUnitAt(newText.length - 1 - suffix)) {
       suffix++;
     }
+    return TextDiff(
+      start: prefix,
+      oldEnd: oldText.length - suffix,
+      inserted: newText.substring(prefix, newText.length - suffix),
+    );
+  }
 
-    final a = prefix;
-    final bOld = oldText.length - suffix;
-    final bNew = newText.length - suffix;
-    final inserted = newText.substring(a, bNew);
+  /// 按文本变更（`oldText` → `newText`）重建 runs，保留未受影响部分的样式。
+  ///
+  /// 新插入文本默认继承变更起点处的原有样式；传入 [insertedTemplate] 时
+  /// 改用该模板（用于「折叠光标下设定样式，仅影响后续输入」）。
+  static List<NoteInline> replaceTextRange(
+    List<NoteInline> runs,
+    String oldText,
+    String newText, {
+    NoteInline? insertedTemplate,
+  }) {
+    if (oldText == newText) return runs;
 
-    final template = styleAtOffset(runs, a);
+    final diff = diffOf(oldText, newText);
+    final a = diff.start;
+    final bOld = diff.oldEnd;
+    final inserted = diff.inserted;
+
+    final template = insertedTemplate ?? styleAtOffset(runs, a);
     final left = <NoteInline>[];
     final right = <NoteInline>[];
     var cursor = 0;

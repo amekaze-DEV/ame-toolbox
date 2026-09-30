@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sticky_notes_module/features/sticky_notes/models/note_attachment.dart';
 import 'package:sticky_notes_module/features/sticky_notes/models/note_block.dart';
 import 'package:sticky_notes_module/features/sticky_notes/models/note_image_attachment.dart';
 import 'package:sticky_notes_module/features/sticky_notes/models/note_inline.dart';
@@ -130,6 +131,59 @@ void main() {
       expect(edited.isPinned, true);
       expect(edited.pinnedAt, updatedAt);
       expect(edited.createdAt, createdAt);
+    });
+
+    test('附件元数据 JSON 往返', () {
+      final attachment = NoteAttachment(
+        id: 'att_1',
+        fileName: '报告.pdf',
+        sizeBytes: 2048,
+        mimeType: 'application/pdf',
+        createdAt: createdAt,
+      );
+      final note = StickyNote(
+        id: 'n',
+        title: 't',
+        attachments: [attachment],
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+      );
+
+      final restored = StickyNote.fromJson(note.toJson());
+
+      expect(restored.attachments, hasLength(1));
+      expect(restored.attachments.single.id, 'att_1');
+      expect(restored.attachments.single.fileName, '报告.pdf');
+      expect(restored.attachments.single.sizeBytes, 2048);
+      expect(restored.attachments.single.mimeType, 'application/pdf');
+      expect(restored.attachments.single.createdAt, createdAt);
+    });
+
+    test('无附件时不输出 attachments 字段且回读为空列表', () {
+      final note = StickyNote(
+          id: 'n', title: 't', createdAt: createdAt, updatedAt: updatedAt);
+
+      expect(note.toJson().containsKey('attachments'), false);
+      expect(StickyNote.fromJson(note.toJson()).attachments, isEmpty);
+    });
+
+    test('copyWith 更新附件列表，未指定时保留原值', () {
+      final attachment = NoteAttachment(
+        id: 'att_1',
+        fileName: 'a.txt',
+        sizeBytes: 1,
+        createdAt: createdAt,
+      );
+      final note = StickyNote(
+        id: 'n',
+        title: 't',
+        attachments: [attachment],
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+      );
+
+      expect(note.copyWith(title: 'x').attachments, hasLength(1));
+      expect(note.copyWith(attachments: const []).attachments, isEmpty);
     });
 
     test('copyWith 置空 categoryId 与 pinnedAt', () {

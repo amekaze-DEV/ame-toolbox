@@ -1,3 +1,4 @@
+import 'note_attachment.dart';
 import 'note_block.dart';
 import 'note_image_attachment.dart';
 
@@ -7,6 +8,7 @@ class StickyNote {
     required this.id,
     required this.title,
     this.content = const [],
+    this.attachments = const [],
     this.categoryId,
     this.isPinned = false,
     this.pinnedAt,
@@ -22,6 +24,9 @@ class StickyNote {
 
   /// 富文本正文（块列表，图片为其中的 [ImageBlock]）。
   final List<NoteBlock> content;
+
+  /// 文件附件（仅元数据；二进制字节按 id 单独存于附件字节存储）。
+  final List<NoteAttachment> attachments;
 
   /// 关联 `NoteCategory.id`，可为 null（无分类）。
   final String? categoryId;
@@ -42,6 +47,8 @@ class StickyNote {
         'id': id,
         'title': title,
         'content': content.map((e) => e.toJson()).toList(),
+        if (attachments.isNotEmpty)
+          'attachments': attachments.map((e) => e.toJson()).toList(),
         if (categoryId != null) 'categoryId': categoryId,
         'isPinned': isPinned,
         if (pinnedAt != null) 'pinnedAt': pinnedAt!.toIso8601String(),
@@ -73,6 +80,10 @@ class StickyNote {
       id: json['id'] as String,
       title: json['title'] as String,
       content: migrated,
+      attachments: (json['attachments'] as List<dynamic>?)
+              ?.map((e) => NoteAttachment.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const <NoteAttachment>[],
       categoryId: json['categoryId'] as String?,
       isPinned: json['isPinned'] as bool? ?? false,
       pinnedAt: json['pinnedAt'] != null
@@ -91,6 +102,7 @@ class StickyNote {
     String? id,
     String? title,
     List<NoteBlock>? content,
+    List<NoteAttachment>? attachments,
     String? categoryId,
     bool clearCategoryId = false,
     bool? isPinned,
@@ -103,6 +115,7 @@ class StickyNote {
         id: id ?? this.id,
         title: title ?? this.title,
         content: content ?? this.content,
+        attachments: attachments ?? this.attachments,
         categoryId: clearCategoryId ? null : (categoryId ?? this.categoryId),
         isPinned: isPinned ?? this.isPinned,
         pinnedAt: clearPinnedAt ? null : (pinnedAt ?? this.pinnedAt),

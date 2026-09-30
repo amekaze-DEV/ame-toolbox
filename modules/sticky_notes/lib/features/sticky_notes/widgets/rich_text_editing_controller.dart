@@ -12,8 +12,10 @@ import '../services/note_rich_text_parser.dart';
 /// - 应用样式时不改动 [value]，只更新 runs 并通知重绘；
 /// - 覆写 [buildTextSpan] 按 runs 渲染多段样式。
 ///
-/// 空文本块上点选样式时，样式暂存于 pendingStyle，
-/// 待首次输入时播种到新 run 上（支持「先设样式再打字」）。
+/// 样式作用范围（与常见编辑器一致）：
+/// - **有选区**：直接修改选中文本的格式；
+/// - **折叠光标**（无选区）：不修改已输入文本，仅记录「当前输入格式」
+///   （pendingStyle），之后输入的文本按该格式渲染，直到再次调整格式为止。
 class RichTextEditingController extends TextEditingController {
   RichTextEditingController({List<NoteInline> runs = const []})
       : _runs = NoteInlineRuns.normalize(runs),
@@ -27,11 +29,11 @@ class RichTextEditingController extends TextEditingController {
   /// 当前 runs（文本 + 样式）。
   List<NoteInline> get runs => _runs;
 
-  /// 工具栏选中态 / 空文本块样式模板：取光标所在 run 的样式。
+  /// 工具栏选中态：优先取「当前输入格式」，否则取光标所在片段的样式。
   NoteInline get currentStyle {
-    if (_runs.isEmpty) {
-      return _pendingStyle ?? const NoteInline(text: '');
-    }
+    final pending = _pendingStyle;
+    if (pending != null) return pending;
+    if (_runs.isEmpty) return const NoteInline(text: '');
     return NoteInlineRuns.styleAtOffset(_runs, _styleOffset);
   }
 
@@ -44,25 +46,22 @@ class RichTextEditingController extends TextEditingController {
 
   @override
   set value(TextEditingValue newValue) {
-    final oldText = value.text;
-    if (newValue.text != oldText) {
-      var nextRuns =
-          NoteInlineRuns.replaceTextRange(_runs, oldText, newValue.text);
-      final pending = _pendingStyle;
-      if (pending != null && _runs.isEmpty && nextRuns.isNotEmpty) {
-        // 空文本块首次输入：用 pendingStyle 播种新文本样式。
-        nextRuns = NoteInlineRuns.overrideStyleAll(nextRuns, pending);
-        _pendingStyle = null;
-      }
-      _runs = nextRuns;
+    if (newValue.text != value.text) {
+      _runs = NoteInlineRuns.replaceTextRange(
+        _runs,
+        value.text,
+        newValue.text,
+        // 折叠光标下设定的格式只作用于新输入的文本。
+        insertedTemplate: _pendingStyle,
+      );
     }
     super.value = newValue;
   }
 
-  /// 对当前选区套用样式。
+  /// 应用样式。
   ///
-  /// 折叠光标（无选区）时作用于光标所在 run；块内无文本时记入
-  /// pendingStyle 供随后输入使用。恢复默认需传对应的 clear 标志。
+  /// 有选区时修改选中文本；折叠光标时仅作为后续输入格式，
+  /// 不改动已输入文本。恢复默认需传对应的 clear 标志。
   void applyStyle({
     bool? bold,
     bool? italic,
@@ -84,10 +83,10 @@ class RichTextEditingController extends TextEditingController {
       clearColorValue: clearColorValue,
     );
 
-    if (_runs.isEmpty) {
+    final selection = this.selection;
+    if (selection.isCollapsed) {
       _pendingStyle = template;
     } else {
-      final selection = this.selection;
       _runs = NoteInlineRuns.applyStyleToRange(
         _runs,
         selection.start,

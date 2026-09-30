@@ -59,6 +59,42 @@
 - **决策**: `StickyNotesConfig`（含分类、排序）存于 `module_sticky_notes_config`；便签列表存于 `module_sticky_notes_notes`。`exportData` 导出两者，`importData` 按 id 合并。
 - **后果**: 配置与业务数据分离；同步导入按 id 合并，避免重复导入产生重复项。
 
+#### ADR-SN-007：关键字检索采用「子串优先 + 子序列兜底」的内存模糊匹配
+
+- **状态**: 已采纳
+- **背景**: 需要按关键字查找便签（标题 / 正文），并要求支持模糊索引。便签数据量级为个人笔记（百千条），无需外置索引引擎；同时项目约束**不新增第三方依赖**，无法引入分词或拼音库。
+- **决策**: 新增纯函数服务 `NoteSearchService`，在内存中对标题与正文纯文本做归一化（去首尾空白、忽略大小写）后匹配：先按**子串**命中，不成立时退化为**子序列**命中（字符按序出现即可，允许跳过中间字符）；命中后按打分排序——标题命中恒优先于正文命中，子串优于子序列，位置越靠前、连续度越高得分越高，同分沿用「置顶优先 + 默认排序方式」。命中下标随结果返回，供 `HighlightedText` 高亮。UI 侧由 `NoteQueryService.search` 组合分类筛选与排序兜底，主页面顶栏搜索按钮展开输入框即时过滤。
+- **后果**: 零依赖、纯函数易测、支持中文子序列召回（如「工报」→「工作汇报」）；代价是子序列匹配对长文本可能产生一定误召回（靠打分排序将精确命中前置缓解），且未覆盖拼音 / 同义词 / 附件内容检索（附件为内嵌图片，暂无可检索文本）。数据量增长到万级时需重新评估（届时可考虑预建倒排索引）。
+- **备选方案**: ① 仅子串匹配——中文必须连续输入，召回不足；② 编辑距离容忍错字——中文短词误报率高，需额外阈值调参；③ 引入第三方全文检索 / 拼音库——违反「不新增依赖」约束。
+#### ADR-SN-008：附件字节与便签元数据分离存储，经内存镜像参与同步
+
+- **状态**: 已采纳
+- **背景**: 便签需支持上传本地文件（单个 ≤ 15MB），要求「查看调用系统默认查看器、可下载、
+  不在系统文件资源管理器下暴露、合并主线后可经 WebDAV 同步」。若把字节 base64 内嵌进
+  便签 JSON（同内联图片），会使便签列表常驻内存体积随附件线性膨胀；若直接落用户可见目录，
+  则既暴露给资源管理器、又难以随模块数据整体同步。
+- **决策**: 附件拆成两层——
+  ① 便签 JSON（`StickyNote.attachments`）只存**元数据**（文件名/大小/MIME/创建时间）；
+  ② 字节以 base64 单独存于模块存储 key `module_sticky_notes_attachments_<id>`
+  （`NoteAttachmentStore`），并按写穿方式维护模块级内存镜像 `attachmentBytesCache`，
+  供 `exportData()`（同步签名）直接取用；`initialize` 预载全部现存附件字节。
+  打开 / 下载由底座 `FileLauncherService` 实现：打开时把字节写入**系统临时目录**
+  （随机目录 + 文件名清洗防穿越）后交系统默认查看器，下载走「另存为」对话框。
+- **后果**: 便签列表内存占用与附件体积解耦；字节不落用户可见目录，且可随模块数据整体导出/导入。
+  代价是打开附件会产生一次性临时文件（位于系统 temp，退出后由系统回收），
+  且同步导入需要附带全部附件字节（同步体积随附件增长）。
+- **备选方案**: ① 字节内嵌便签 JSON——列表内存膨胀、单条便签序列化成本高；
+  ② 直接落用户文档目录——暴露给资源管理器且不随 WebDAV 同步；
+  ③ 新建独立「附件」模块——超出本模块范围，跨模块引用反而破坏同步边界。
+
+#### ADR-SN-006：查看与编辑分离，横屏采用主从双栏
+
+- **状态**: 已采纳
+- **背景**: 初版点击卡片直接进入编辑页，缺少只读浏览路径；横屏下便签卡片被压缩为两列网格，无法在列表旁查看内容。
+- **决策**: 新增只读**查看页**（`NoteDetailPage` + `NoteRichTextViewer` / `NoteDetailView`），编辑入口移至查看页顶栏；竖屏点击卡片进入查看页，横屏改为「列表 + 内容预览」主从双栏（点击卡片切换右侧预览，预览区提供编辑入口，不跳转页面）。
+- **后果**: 浏览与编辑职责分离，误触不会直接进入编辑态；横屏信息密度提升（列表 + 正文同屏）。代价是横屏不再是两列卡片网格（改为单列列表 + 预览），只读渲染与编辑渲染需分别维护（共用 `NoteRichTextParser` 与 `NoteImageBlock`）。
+- **补充（样式作用范围）**: 富文本样式以选区为单位；折叠光标下调整格式**不修改已输入文本**，仅作为后续输入的格式（`RichTextEditingController.pendingStyle`，直到再次调整格式为止），与 Word / 在线文档的行为一致。
+
 #### ADR-SN-005：正文取消块类型，改为「文本块 + 图片块」连续图文
 
 - **状态**: 已采纳
@@ -86,7 +122,9 @@
 | `stickyNotesConfigProvider` | `ChangeNotifierProvider<StickyNotesConfigController>` | 分类列表、默认排序方式 |
 | `stickyNotesProvider` | `ChangeNotifierProvider<StickyNotesController>` | 便签列表、增删改、置顶切换、分类筛选、排序、导入 |
 | `stickyNotesSummaryProvider` | `Provider<NoteSummary>` | 由便签列表派生的首页摘要 |
-| `noteQueryServiceProvider` | `Provider<NoteQueryService>` | 置顶 + 排序 + 分类筛选（纯函数） |
+| `noteQueryServiceProvider` | `Provider<NoteQueryService>` | 置顶 + 排序 + 分类筛选 + 关键字检索（纯函数） |
+| `noteAttachmentStoreProvider` | `Provider<NoteAttachmentStore>` | 附件字节存储（写穿缓存 `attachmentBytesCache`） |
+| `attachmentServiceProvider` | `Provider<AttachmentService>` | 附件编排：选择 / 打开 / 下载 / 删除 |
 
 ### 2.2 状态更新原则
 
@@ -123,13 +161,24 @@ flowchart TD
 | `ImageBlock` | 图片块：内联图片载荷（图文混排） | 嵌入 `StickyNote.content` |
 | `NoteInline` | 行内元素：文本 + 加粗/斜体/下划线/删除线/绝对字号/自定义颜色/链接 | 嵌入 `NoteBlock` |
 | `NoteImageAttachment` | 图片载荷：base64 数据、创建时间 | 嵌入 `ImageBlock` |
+| `NoteAttachment` | 文件附件元数据：文件名、大小、MIME、创建时间 | 嵌入 `StickyNote.attachments`（字节单独存储） |
 | `NoteSummary` | 首页摘要聚合 | 不持久化，运行时派生 |
+
+> 只读渲染复用 `NoteRichTextParser.buildTextSpan`（`NoteRichTextViewer`），
+> 与编辑器 `RichTextEditingController.buildTextSpan` 共用同一套样式解析，避免两处样式规则漂移。
+
+> 编辑器文本块 `TextField` 必须显式设置 `strutStyle: StrutStyle.disabled`：
+> `EditableText` 在未指定时会用基础样式生成 `forceStrutHeight: true` 的固定行高，
+> 导致大字号文本与相邻行重叠；关闭 strut 后行高随每行实际字号变化，
+> 与只读视图（`Text.rich` 默认无 strut）保持一致。
 
 ### 3.2 持久化策略
 
 - 通过 `StorageService.saveData/loadData` 读写，key 前缀 `module_sticky_notes_`。
 - `StickyNotesConfig`：`module_sticky_notes_config`。
 - `StickyNote` 列表：`module_sticky_notes_notes`（JSON 数组，含 schema 版本字段便于迁移）。
+- 附件字节：`module_sticky_notes_attachments_<id>`（base64），仅存被便签引用的附件；
+  删除便签或移除附件时级联清理。
 - 配置/列表变更后即时写入。
 - 敏感数据：模块不存储密码等敏感信息，全部交给底座。
 
@@ -139,8 +188,16 @@ flowchart TD
 {
   'module_sticky_notes_config': <StickyNotesConfig json>,
   'module_sticky_notes_notes': <List<StickyNote> json>,
+  'module_sticky_notes_attachments': <Map<附件 id, base64 字节>>,
 }
 ```
+
+- 附件字节仅导出被便签引用的 id；导入时只落库合并结果中被引用的 id，
+  避免产生无人引用的孤儿字节。
+- `exportData()` / `importData()` 为同步签名，读取 / 写入模块级内存镜像
+  （`data/sync_snapshots.dart` 的配置与便签镜像 + `attachmentBytesCache`）：
+  控制器在加载 / 变更后写穿镜像，模块 `initialize` 预载附件字节，
+  保证同一轮同步内「导出 → 导入 → 再次导出」结果一致。
 
 - 富文本块 JSON 使用 `type` discriminator 标识具体 `NoteBlock` 子类，保证跨版本反序列化。
 - 导入合并策略：配置整体替换；便签按 `id` 合并（远端存在且本地存在 → 以 `updatedAt` 较新者为准；仅单侧存在 → 保留双方）。
@@ -189,8 +246,8 @@ flowchart TD
 
 - 颜色全部来自 `Theme.of(context).colorScheme`，不硬编码。
 - 置顶标识使用 `colorScheme.primary`。
-- 分类颜色：自定义分类使用 `ColorScheme` 次要色板循环分配。
-- 删除分类后便签显示“无分类”（`onSurfaceVariant`）。
+- 分类颜色：新增 / 编辑分类时从 18 色预设色板（Material 调色板，6 列排布）中选择，默认取色板首色（蓝）。
+- 删除分类后便签显示“无分类”（`onSurfaceVariant`）；全部分类（含默认分类）均可删除，编辑对话框内同样提供删除入口。
 - 圆角遵循 MD3：小 4dp（标签/圆点）、中 12dp（卡片）、大 16dp（对话框容器）。
 - 富文本标题字号取自 `textTheme`（`titleLarge` / `titleMedium` / `titleSmall`）。
 
@@ -214,9 +271,11 @@ flowchart TD
 
 | 服务 | 职责 |
 |------|------|
-| `NoteQueryService` | 置顶 + 排序 + 分类筛选（纯函数） |
+| `NoteQueryService` | 置顶 + 排序 + 分类筛选 + 关键字检索组合（纯函数） |
 | `NoteSummaryService` | 摘要聚合（总数/置顶数/分类数） |
 | `NoteRichTextParser` | 富文本块模型 ↔ 文本/渲染分发（纯函数） |
+| `AttachmentService` | 附件编排：选择→15MB 校验→落库，打开（系统默认查看器）/ 下载（另存为）/ 删除 |
+| `NoteAttachmentStore` | 附件字节存储与写穿缓存（`attachmentBytesCache`） |
 
 ### 5.3 数据流
 
@@ -232,6 +291,9 @@ flowchart TD
 
 - 模块不存储 WebDAV 密码、设备 ID 等敏感数据，全部交给底座。
 - 图片附件 base64 仅随模块数据存储与同步，不写入系统其他位置。
+- 文件附件字节同样仅存于模块存储 key 下，不写入用户可见目录；
+  仅「打开」时把字节写入系统临时目录（随机目录 + 文件名清洗）后交系统默认查看器，
+  临时文件不进入文档 / 下载目录。
 - 模块数据同步走底座 WebDAV，遵循 WebDAV 账号维度隔离。
 
 ---
@@ -246,25 +308,24 @@ flowchart TD
 | 值对象 | `<name>.dart` | `note_inline.dart` |
 | Provider | `<name>_provider.dart` | `sticky_notes_provider.dart` |
 | Controller | `<name>_controller.dart` | `sticky_notes_controller.dart` |
-| 服务 | `<name>_service.dart` / `<name>_parser.dart` | `note_query_service.dart`、`note_rich_text_parser.dart` |
+| 服务 | `<name>_service.dart` / `<name>_parser.dart` | `note_query_service.dart`、`note_rich_text_parser.dart`、`attachment_service.dart` |
+| 存储 | `<name>_store.dart` / `<name>_snapshots.dart` | `note_attachment_store.dart`、`sync_snapshots.dart` |
 | 页面 | `<name>_page.dart` | `sticky_notes_page.dart`、`note_edit_page.dart` |
 | Widget | `<name>_widget.dart` 或 `<name>.dart` | `note_card_widget.dart`、`note_category_filter.dart` |
 | Repository | `<name>_repository.dart` | `sticky_notes_repository.dart` |
 
-模块目录结构：
+模块目录结构（P9 清理后，与主线其他子模块一致）：
 
 ```
 modules/sticky_notes/
 ├── docs/
 ├── lib/
-│   ├── main.dart                 #【临时】独立运行入口（合并后删除）
-│   ├── debug/                    #【临时】调试支撑（合并后删除）
-│   └── features/sticky_notes/    # 模块正式业务代码
+│   └── features/sticky_notes/    # 模块正式业务代码（无独立运行入口）
 │       ├── sticky_notes_module.dart
 │       ├── data/       models/   providers/
 │       ├── services/   pages/    widgets/
-└── test/
-└── windows/                      #【临时】独立运行壳（合并后删除）
+├── test/
+└── pubspec.yaml                  # path 依赖底座 ametoolbox
 ```
 
 ---
@@ -285,9 +346,9 @@ modules/sticky_notes/
 
 | 测试层级 | 覆盖目标 | 工具 |
 |----------|----------|------|
-| 单元测试 | Models（JSON 往返，含 `NoteBlock` sealed class 各子类）、`NoteQueryService`（置顶/排序/筛选）、`NoteSummaryService`（摘要）、`NoteRichTextParser`（解析/渲染分发）、Repository | `flutter_test` |
-| Widget 测试 | 主页面（列表、分类筛选、空状态、置顶切换）、详情/编辑页、设置页 | `flutter_test` |
-| 集成测试 | 模块注册、`exportData` / `importData` 往返与合并 | 手动 + 底座集成 |
+| 单元测试 | Models（JSON 往返，含 `NoteBlock` sealed class 各子类与 `NoteAttachment`）、`NoteQueryService`（置顶/排序/筛选/检索组合）、`NoteSearchService`（模糊匹配与打分）、`NoteSummaryService`（摘要）、`NoteRichTextParser`（解析/渲染分发）、Repository、`AttachmentService` / `NoteAttachmentStore`（15MB 校验、缓存、打开/下载/删除）、`StickyNotesModule`（预载与导出/导入） | `flutter_test` |
+| Widget 测试 | 主页面（列表、分类筛选、空状态、置顶切换、关键字检索）、`HighlightedText`（命中高亮）、详情/编辑页（含附件区增删打开下载）、设置页 | `flutter_test` |
+| 集成测试 | 模块注册、`exportData` / `importData` 往返与合并（含附件字节） | 手动 + 底座集成 |
 | 静态分析 | 全模块 | `flutter analyze` |
 
 ---
@@ -300,6 +361,8 @@ modules/sticky_notes/
 | 图片 base64 导致数据量与 JSON 体积增大 | 中 | 限定单图大小/数量，压缩存储；文档记录取舍 |
 | 横屏两列网格 + 可变高度卡片实现复杂度 | 中 | 用 `ResponsiveBuilder` 分层；组件拆分，Widget 测试覆盖；必要时参照底座 Masonry 思路 |
 | 同步导入重复项 | 中 | 导入按 id 合并、以 `updatedAt` 判定新旧；schema 版本字段预留迁移 |
+| 附件体积使同步负载增大 | 中 | 单附件限 15MB；同步仅携带被引用附件；后续可按需引入压缩或分片 |
+| 「打开附件」需要落临时文件才能交由系统查看器 | 低 | 临时目录随机命名 + 文件名清洗；不写入用户可见目录 |
 | 大量便签导致列表重建开销 | 低 | 使用 `ValueKey` + `const` 构造；列表项局部重建 |
 
 ---

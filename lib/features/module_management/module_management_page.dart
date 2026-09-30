@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:ametoolbox/core/models/module_definition.dart';
 import 'package:ametoolbox/core/providers/module_provider.dart';
+import 'package:ametoolbox/shared/utils/module_icon_mapper.dart';
 import 'package:ametoolbox/shared/widgets/adaptive_list_tile.dart';
 import 'package:ametoolbox/shared/widgets/md3_switch.dart';
 
@@ -89,7 +90,7 @@ class _ModuleListTile extends StatelessWidget {
 
     return AdaptiveListTile(
       leading: Icon(
-        _iconFor(definition.iconName),
+        ModuleIconMapper.map(definition.iconName),
         color: enabled ? colorScheme.primary : colorScheme.onSurfaceVariant,
       ),
       title: Text(definition.name),
@@ -105,14 +106,5 @@ class _ModuleListTile extends StatelessWidget {
         onChanged: onToggle,
       ),
     );
-  }
-
-  IconData _iconFor(String iconName) {
-    return switch (iconName) {
-      'counter' => Icons.plus_one,
-      'timer' => Icons.timer_outlined,
-      'checklist' => Icons.checklist_outlined,
-      _ => Icons.widgets_outlined,
-    };
   }
 }

@@ -1,5 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sticky_notes_module/features/sticky_notes/data/note_attachment_store.dart';
 import 'package:sticky_notes_module/features/sticky_notes/data/sticky_notes_repository.dart';
+import 'package:sticky_notes_module/features/sticky_notes/models/note_attachment.dart';
 import 'package:sticky_notes_module/features/sticky_notes/models/sticky_note.dart';
 import 'package:sticky_notes_module/features/sticky_notes/providers/sticky_notes_controller.dart';
 
@@ -8,6 +12,7 @@ import '../helpers/memory_storage_service.dart';
 void main() {
   late MemoryStorageService storage;
   late StickyNotesRepository repository;
+  late NoteAttachmentStore attachmentStore;
   late StickyNotesController controller;
   final base = DateTime(2026, 9, 1, 9);
 
@@ -16,10 +21,12 @@ void main() {
     String? categoryId,
     bool isPinned = false,
     DateTime? updatedAt,
+    List<NoteAttachment> attachments = const [],
   }) =>
       StickyNote(
         id: id,
         title: id,
+        attachments: attachments,
         categoryId: categoryId,
         isPinned: isPinned,
         createdAt: base,
@@ -29,7 +36,12 @@ void main() {
   setUp(() {
     storage = MemoryStorageService();
     repository = StickyNotesRepository(storageService: storage);
-    controller = StickyNotesController(repository: repository);
+    attachmentStore = NoteAttachmentStore(storageService: storage);
+    attachmentBytesCache.clear();
+    controller = StickyNotesController(
+      repository: repository,
+      attachmentStore: attachmentStore,
+    );
   });
 
   group('StickyNotesController', () {
@@ -56,6 +68,40 @@ void main() {
 
       await controller.delete('a');
       expect(await repository.loadAll(), isEmpty);
+    });
+
+    test('delete 级联清理该便签的附件字节与缓存', () async {
+      final ofA = NoteAttachment(
+        id: 'att_a',
+        fileName: 'report.pdf',
+        sizeBytes: 3,
+        createdAt: base,
+      );
+      final ofB = NoteAttachment(
+        id: 'att_b',
+        fileName: 'note.txt',
+        sizeBytes: 3,
+        createdAt: base,
+      );
+      await attachmentStore.saveBytes('att_a', Uint8List.fromList([1, 2, 3]));
+      await attachmentStore.saveBytes('att_b', Uint8List.fromList([4, 5, 6]));
+      await controller.add(note('a', attachments: [ofA]));
+      await controller.add(note('b', attachments: [ofB]));
+
+      await controller.delete('a');
+
+      // 被删便签的附件字节与缓存均被清理。
+      expect(await attachmentStore.loadBytes('att_a'), isNull);
+      expect(attachmentBytesCache.containsKey('att_a'), false);
+      // 其他便签的附件不受影响。
+      expect(await attachmentStore.loadBytes('att_b'), isNotNull);
+      expect(controller.notes.single.id, 'b');
+    });
+
+    test('delete 对不存在 id 无副作用', () async {
+      await controller.add(note('a'));
+      await controller.delete('missing');
+      expect(controller.notes.length, 1);
     });
 
     test('togglePin 置顶记录时间，取消置顶清空时间', () async {

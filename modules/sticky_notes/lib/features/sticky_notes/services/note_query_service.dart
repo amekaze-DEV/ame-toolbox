@@ -1,5 +1,6 @@
 import '../models/note_sort_mode.dart';
 import '../models/sticky_note.dart';
+import 'note_search_service.dart';
 
 /// 便签查询 / 排序 / 筛选服务（纯函数）。
 ///
@@ -8,7 +9,10 @@ import '../models/sticky_note.dart';
 ///   升序兜底。
 /// - 筛选：按分类筛选，`null` 表示不限。
 class NoteQueryService {
-  const NoteQueryService();
+  const NoteQueryService({this.searchService = const NoteSearchService()});
+
+  /// 关键字检索服务（标题 + 正文）。
+  final NoteSearchService searchService;
 
   /// 无分类筛选标识（筛选未归类的便签）。
   static const noCategoryKey = '__none__';
@@ -66,4 +70,20 @@ class NoteQueryService {
     String? categoryId,
   }) =>
       sort(filterByCategory(notes, categoryId), mode);
+
+  /// 分类筛选 + 关键字检索（spec §3.6）。
+  ///
+  /// 先按 [mode] 排序，作为同分命中的兜底顺序；因此同分结果仍沿用
+  /// 「置顶优先 + 所选排序方式」的相对顺序。
+  /// 关键字为空（或仅空白）时返回空列表，此时应回退到 [query]。
+  List<NoteSearchHit> search(
+    List<StickyNote> notes, {
+    required NoteSortMode mode,
+    String? categoryId,
+    required String keyword,
+  }) {
+    if (NoteSearchService.normalizeKeyword(keyword) == null) return const [];
+    final base = sort(filterByCategory(notes, categoryId), mode);
+    return searchService.search(base, keyword);
+  }
 }

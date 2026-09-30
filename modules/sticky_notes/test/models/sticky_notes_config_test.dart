@@ -38,10 +38,10 @@ void main() {
       expect(restored.defaultSortMode, NoteSortMode.updatedDesc);
     });
 
-    test('分类为空时回退内置分类', () {
+    test('显式空分类列表保持为空（默认分类亦可删除）', () {
       final restored =
           StickyNotesConfig.fromJson({'categories': <dynamic>[]});
-      expect(restored.categories.length, 3);
+      expect(restored.categories, isEmpty);
     });
 
     test('copyWith 仅更新指定字段', () {

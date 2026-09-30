@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:ametoolbox/shared/utils/app_text_styles.dart';
+
 import '../models/shift_config.dart';
 import '../providers/holiday_data_controller.dart';
 import '../providers/holiday_data_provider.dart';
@@ -35,7 +37,6 @@ class ShiftAssistantDashboardQuickCard extends ConsumerWidget {
     final rotation = config.selectedRotation;
 
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -55,7 +56,7 @@ class ShiftAssistantDashboardQuickCard extends ConsumerWidget {
                   Expanded(
                     child: Text(
                       '倒班助手',
-                      style: textTheme.titleMedium,
+                      style: AppTextStyles.cardTitle(context),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -136,7 +137,7 @@ class ShiftAssistantDashboardQuickCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Text('今日', style: _sectionStyle(context)),
+            Text('今日', style: AppTextStyles.sectionTitle(context)),
             const SizedBox(width: 8),
             Flexible(
               child: Text(
@@ -161,9 +162,7 @@ class ShiftAssistantDashboardQuickCard extends ConsumerWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   _formatSolarDate(now),
-                  style: textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: textTheme.headlineSmall,
                 ),
               ),
             ),
@@ -207,7 +206,7 @@ class ShiftAssistantDashboardQuickCard extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('我的班组', style: _sectionStyle(context)),
+        Text('我的班组', style: AppTextStyles.sectionTitle(context)),
         const SizedBox(height: 4),
         Row(
           children: [
@@ -224,9 +223,7 @@ class ShiftAssistantDashboardQuickCard extends ConsumerWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   slot == null ? '暂无班次数据' : _formatSlot(slot),
-                  style: textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: textTheme.bodyMedium,
                   maxLines: 1,
                 ),
               ),
@@ -250,7 +247,7 @@ class ShiftAssistantDashboardQuickCard extends ConsumerWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('当前轮班', style: _sectionStyle(context)),
+          Text('当前轮班', style: AppTextStyles.sectionTitle(context)),
           const SizedBox(height: 4),
           Text(
             '暂无轮班，请到设置页添加',
@@ -267,7 +264,10 @@ class ShiftAssistantDashboardQuickCard extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('当前轮班 · ${rotation.name}', style: _sectionStyle(context)),
+        Text(
+          '当前轮班 · ${rotation.name}',
+          style: AppTextStyles.sectionTitle(context),
+        ),
         const SizedBox(height: 4),
         Wrap(
           spacing: 6,
@@ -286,11 +286,6 @@ class ShiftAssistantDashboardQuickCard extends ConsumerWidget {
       ],
     );
   }
-
-  TextStyle? _sectionStyle(BuildContext context) =>
-      Theme.of(context).textTheme.titleSmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          );
 
   /// 公历日期展示：如“8月9日 星期日”。
   String _formatSolarDate(DateTime date) {
@@ -328,7 +323,6 @@ class _HolidayBadge extends StatelessWidget {
         '$label${holiday.name}',
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: color,
-              fontWeight: FontWeight.bold,
             ),
       ),
     );
@@ -365,7 +359,6 @@ class _GroupChip extends StatelessWidget {
         label,
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: highlight ? scheme.onPrimary : scheme.onPrimaryContainer,
-              fontWeight: FontWeight.w600,
             ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,

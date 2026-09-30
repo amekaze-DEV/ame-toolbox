@@ -54,6 +54,22 @@ void main() {
   ThemeData themeOf(WidgetTester tester) =>
       Theme.of(tester.element(find.byType(EditableText)));
 
+  /// 取正文控制器。
+  RichTextEditingController bodyController(WidgetTester tester) {
+    final editable = tester.widget<EditableText>(find.byType(EditableText));
+    return editable.controller as RichTextEditingController;
+  }
+
+  /// 全选正文（模拟「先选中文本再调整格式」）。
+  Future<void> selectAllBody(WidgetTester tester) async {
+    final controller = bodyController(tester);
+    controller.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: controller.text.length,
+    );
+    await tester.pump();
+  }
+
   Future<void> pumpEditor(WidgetTester tester,
       {List<NoteBlock>? blocks}) async {
     await tester.pumpWidget(
@@ -68,29 +84,47 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('点击加粗后文本实际渲染为粗体', (tester) async {
+  testWidgets('选中文本后点击加粗，实际渲染为粗体', (tester) async {
     await pumpEditor(tester);
     expect(runStyle(tester).fontWeight, isNot(FontWeight.bold));
 
+    await selectAllBody(tester);
     await tester.tap(find.byTooltip('加粗'));
     await tester.pumpAndSettle();
 
     expect(runStyle(tester).fontWeight, FontWeight.bold);
   });
 
-  testWidgets('点击下划线后文本实际渲染下划线', (tester) async {
+  testWidgets('选中文本后点击下划线，实际渲染下划线', (tester) async {
     await pumpEditor(tester);
     expect(runStyle(tester).decoration, TextDecoration.none);
 
+    await selectAllBody(tester);
     await tester.tap(find.byTooltip('下划线'));
     await tester.pumpAndSettle();
 
     expect(runStyle(tester).decoration, TextDecoration.underline);
   });
 
-  testWidgets('点击斜体与删除线后实际渲染生效且互不覆盖', (tester) async {
+  testWidgets('折叠光标改样式不改已输入文本，仅后续输入生效', (tester) async {
+    await pumpEditor(tester);
+    expect(runStyle(tester).fontWeight, isNot(FontWeight.bold));
+
+    // 折叠光标（未选中任何文本）下点加粗：已输入文本保持不变。
+    await tester.tap(find.byTooltip('加粗'));
+    await tester.pumpAndSettle();
+    expect(runStyle(tester).fontWeight, isNot(FontWeight.bold));
+
+    // 随后输入的文本继承该样式。
+    await tester.enterText(find.byType(EditableText), '新增');
+    await tester.pumpAndSettle();
+    expect(runStyle(tester).fontWeight, FontWeight.bold);
+  });
+
+  testWidgets('选中文本后点击斜体与删除线实际渲染生效且互不覆盖', (tester) async {
     await pumpEditor(tester);
 
+    await selectAllBody(tester);
     await tester.tap(find.byTooltip('斜体'));
     await tester.pumpAndSettle();
     expect(runStyle(tester).fontStyle, FontStyle.italic);
@@ -105,6 +139,7 @@ void main() {
     await pumpEditor(tester);
     final base = baseStyle(tester);
 
+    await selectAllBody(tester);
     await tester.tap(find.byTooltip('字号'));
     await tester.pumpAndSettle();
     await tester.enterText(dialogTextField(), '26');
@@ -119,6 +154,7 @@ void main() {
   testWidgets('取色盘选色后实际渲染自定义颜色', (tester) async {
     await pumpEditor(tester);
 
+    await selectAllBody(tester);
     await tester.tap(find.byTooltip('字体颜色'));
     await tester.pumpAndSettle();
     await tester.tap(swatchOf(0xFFED7D31));
@@ -137,12 +173,14 @@ void main() {
     expect(runStyle(tester).fontSize, 30);
     expect(runStyle(tester).color, const Color(0xFFED7D31));
 
+    await selectAllBody(tester);
     await tester.tap(find.byTooltip('字号'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('默认'));
     await tester.pumpAndSettle();
     expect(runStyle(tester).fontSize, theme.textTheme.bodyMedium?.fontSize);
 
+    await selectAllBody(tester);
     await tester.tap(find.byTooltip('字体颜色'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('默认'));
@@ -156,6 +194,7 @@ void main() {
     ]);
     expect(runStyle(tester).fontWeight, FontWeight.bold);
 
+    await selectAllBody(tester);
     await tester.tap(find.byTooltip('加粗'));
     await tester.pumpAndSettle();
 

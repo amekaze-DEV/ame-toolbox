@@ -5,7 +5,9 @@
 
 import 'package:flutter/foundation.dart';
 
+import '../data/note_attachment_store.dart';
 import '../data/sticky_notes_repository.dart';
+import '../data/sync_snapshots.dart';
 import '../models/sticky_note.dart';
 
 /// 便签列表状态控制器。
@@ -14,10 +16,14 @@ import '../models/sticky_note.dart';
 /// 并持有主页面分类筛选状态。
 /// 所有变更即时持久化到 [StickyNotesRepository] 并通知监听者。
 class StickyNotesController extends ChangeNotifier {
-  StickyNotesController({required StickyNotesRepository repository})
-      : _repository = repository;
+  StickyNotesController({
+    required StickyNotesRepository repository,
+    required NoteAttachmentStore attachmentStore,
+  })  : _repository = repository,
+        _attachmentStore = attachmentStore;
 
   final StickyNotesRepository _repository;
+  final NoteAttachmentStore _attachmentStore;
 
   List<StickyNote> _notes = [];
   bool _loaded = false;
@@ -43,6 +49,7 @@ class StickyNotesController extends ChangeNotifier {
       _notes = stored;
     }
     _loaded = true;
+    latestNotesSnapshot = _notes;
     notifyListeners();
   }
 
@@ -60,9 +67,15 @@ class StickyNotesController extends ChangeNotifier {
     await _persist();
   }
 
-  /// 删除便签。
+  /// 删除便签，并级联清理其附件的字节存储（附件字节不再被引用）。
   Future<void> delete(String id) async {
+    final removed = _notes.where((e) => e.id == id).toList();
     _notes = _notes.where((e) => e.id != id).toList();
+    for (final note in removed) {
+      for (final attachment in note.attachments) {
+        await _attachmentStore.deleteBytes(attachment.id);
+      }
+    }
     await _persist();
   }
 
@@ -110,6 +123,7 @@ class StickyNotesController extends ChangeNotifier {
   }
 
   Future<void> _persist() async {
+    latestNotesSnapshot = _notes;
     await _repository.saveAll(_notes);
     notifyListeners();
   }

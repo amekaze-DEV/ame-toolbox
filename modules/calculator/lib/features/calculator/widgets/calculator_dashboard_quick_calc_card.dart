@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ametoolbox/shared/utils/app_text_styles.dart';
 import 'package:intl/intl.dart';
 
 import '../models/calculation_history.dart';
@@ -83,7 +84,7 @@ class _CalculatorDashboardQuickCalcCardState
                 Expanded(
                   child: Text(
                     '多功能计算器',
-                    style: textTheme.titleMedium,
+                    style: AppTextStyles.cardTitle(context),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -130,9 +131,7 @@ class _CalculatorDashboardQuickCalcCardState
             const Divider(height: 16),
             Text(
               '最近计算',
-              style: textTheme.titleSmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+              style: AppTextStyles.sectionTitle(context),
             ),
             const SizedBox(height: 4),
             if (history.isEmpty)

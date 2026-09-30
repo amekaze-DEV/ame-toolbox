@@ -419,7 +419,8 @@ Material Design 3 是本项目的刚性 UI 规范（C-001），落地方式如�
 2. **组件库**：优先使用 Flutter 内置的 MD3 组件（FilledButton、ElevatedButton、OutlinedButton、TextButton、Switch、Slider、NavigationBar、NavigationRail、AppBar、Card、ListTile 等），不自定义视觉样式
 3. **动效规范**：状态切换动画时长统一为 300ms，使用 `Curves.easeInOut` 缓动曲线。主题切换、布局切换、模块开关等过渡均遵循此规范
 4. **形状系统**：使用 MD3 圆角规范，卡片和组件使用默认的 MD3 形状（小圆角 4dp、中圆角 12dp、大圆角 16dp）
-5. **排版系统**：使用 `Theme.of(context).textTheme` 中的 MD3 文本样式（displayLarge、headlineMedium、titleLarge、bodyMedium 等），不自定义字体
+5. **排版系统**：使用 `Theme.of(context).textTheme` 中的 MD3 文本样式（displayLarge、headlineMedium、titleLarge、bodyMedium 等），不自定义字体、字号
+   - **标题加粗规范**：MD3 的 `titleMedium`（16sp）/ `titleSmall`（14sp）默认字重均为 `w500`，各处直接引用会因字形与颜色差异呈现出「时粗时细」的不一致观感。模块卡片主标题与卡片内小节标题统一通过 `lib/shared/utils/app_text_styles.dart` 的 `AppTextStyles.cardTitle` / `AppTextStyles.sectionTitle` 获取（即 `titleMedium` / `titleSmall` + `FontWeight.bold`），底座与子模块共用同一定义，禁止在页面内自行 `copyWith` 字重
 
 #### 主题色板
 

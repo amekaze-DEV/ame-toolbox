@@ -88,7 +88,7 @@ class AppConstants {
       iconName: 'checklist',
     ),
     (
-      id: 'notes',
+      id: 'sticky_notes',
       name: '便签',
       description: '快速记录与便签管理',
       iconName: 'notes',

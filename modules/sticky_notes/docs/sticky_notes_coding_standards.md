@@ -133,7 +133,9 @@ lib/
 |----|------|
 | 静态分析 | `flutter analyze` 零报错 |
 | 单元测试 | 覆盖率 ≥80% |
-| 测试范围 | 模型 JSON 往返（含文本块/图片块、旧图片附件与旧块类型迁移）、`NoteInlineRuns`（行内 runs 纯函数：归一化/选区样式/文本 diff）、`NoteQueryService`（置顶/排序/筛选）、`NoteSummaryService`（摘要）、`NoteRichTextParser`（解析/渲染分发/行内样式解析）、Repository、页面与组件 Widget 测试（含字号选择器与取色盘交互） |
+| 测试范围 | 模型 JSON 往返（含文本块/图片块、旧图片附件与旧块类型迁移）、`NoteInlineRuns`（行内 runs 纯函数：归一化/选区样式/文本 diff）、`NoteQueryService`（置顶/排序/筛选）、`NoteSummaryService`（摘要）、`NoteRichTextParser`（解析/渲染分发/行内样式解析）、Repository、页面与组件 Widget 测试（含字号选择器、取色盘、查看页、横屏主从双栏） |
+| 布局测试 | `LayoutController` 读取真实 `PlatformDispatcher`（测试环境固定 800x600），无法用 `tester.view` 控制横竖屏；需通过其公开断点 API（`setAutoBreakpoint(false)` + `setBreakpoint(1.0/2.0)`）在测试中切换布局模式 |
+| 样式作用范围 | 折叠光标下调整格式只影响后续输入（`pendingStyle`），有选区才修改选中文本；相关断言须先设置选区（`controller.selection`） |
 | 提交前 | 运行 `flutter analyze` 与 `flutter test` 通过 |
 
 ---

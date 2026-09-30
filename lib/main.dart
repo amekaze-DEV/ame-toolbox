@@ -56,17 +56,21 @@ Future<void> main() async {
   final notificationService = LocalNotificationService();
   await notificationService.initialize();
 
+  // 先初始化所有已注册模块，再加载同步服务。
+  //
+  // 同步服务加载时可能立即触发一次启动同步，而同步会调用模块的
+  // `exportData()`；若模块尚未初始化，导出会拿到默认 / 空数据，
+  // 存在覆盖服务端数据的风险。
+  for (final module in registry) {
+    await module.initialize(storage);
+  }
+
   await Future.wait([
     themeController.load(),
     layoutController.load(),
     syncService.load(),
     moduleController.load(),
   ]);
-
-  // 初始化所有已注册模块。
-  for (final module in registry) {
-    await module.initialize(storage);
-  }
 
   runApp(
     ProviderScope(
